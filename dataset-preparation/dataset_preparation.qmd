@@ -1,0 +1,205 @@
+---
+title: "Dataset Preparation"
+author: Deepankar Vyas, 23200527
+format:
+  html:
+    embed-resources: true
+  pdf: default
+execute: 
+  warning: false
+---
+
+## DATASET PREPARATION
+
+Here, we will web scrape data from `Football.co.uk[1]` website, for the last 9 seasons of the German league - Bundesliga. This dataset will help us provide various match stats for both Home and Away teams such as :-
+
+1.  Goals
+2.  Shots on Target
+3.   Corners
+4.  Fouls Commited
+5.  Yellow and Red Cards
+6.  Betting odds of various organizations
+
+We will be using Goals, Shots on Target , Corners of both the Home and Away teams as well as Result of the matches. We will we scarp data of the past 9-10 seasons i.e (2012/13-2023/24)
+
+```{r}
+#| label: dataset preparation - loading libraries
+#| echo: false
+
+library(knitr)
+library(rvest)
+library(dplyr)
+library(stringr)
+
+```
+
+```{r}
+#| label : Dataset preparation-football.co.uk
+
+# Base URL
+base_url <- "https://www.football-data.co.uk/mmz4281"
+
+# Seasons
+seasons <- c("1213", "1314", "1415", "1516", "1617", "1718", "1819", "1920", "2021", "2122", "2223", "2324")
+
+# Directory to save files
+dir.create("Bundesliga_2012_2024", showWarnings = FALSE)
+directory <- "Bundesliga_2012_2024"
+
+# Function to download and read a CSV file
+download_and_read_csv <- function(season) {
+  file_url <- paste0(base_url, "/", season, "/D1.csv")
+  destfile <- paste0(directory, "/D1_", season, ".csv")
+  
+  # Download the file
+  download.file(file_url, destfile, mode = "wb")
+  
+  # Read the CSV file
+  df <- read.csv(destfile)
+  
+  invisible (df)
+}
+
+# Download and combine all CSV files into a master dataset
+master_dataset <- bind_rows(lapply(seasons, download_and_read_csv))
+
+# Save the master dataset to a CSV file
+write.csv(master_dataset, paste0("Bundesliga_2012_2024_master.csv"), row.names = FALSE)
+
+# Print the first few rows of the master dataset
+head(master_dataset)
+
+
+
+
+```
+
+Now, we will web scrap player and team's ratings from `FIFA Index[2]` website staring from FIFA 12 till FIFA 24. These are the ratings given by FIFA video game to teams and players and are generated periodically, taking into account current form of teams and players, and thus are a good measure of the current state of the team. We will first focus on the team ratings. We will web scrap following components of team ratings-
+
+1.  Attack Rating
+2.  Defense Rating
+3.  Midfield Rating
+4.  Overall Rating
+
+```{r}
+#| label: Dataset preparation-fifa_ratings_team
+
+# Base URL components
+base_url <- "https://fifaindex.com/teams/fifa24"
+league_params <- "league=19&league=20&order=desc"
+max_pages <- 3
+
+# Function to scrape data from a given URL
+scrape_fifa_data <- function(url) {
+  page <- try(read_html(url), silent = TRUE)
+  if (inherits(page, "try-error")) {
+    return(data.frame()) # Return empty data frame if error occurs
+  }
+  
+  # Extract league names
+  leagues <- page %>% html_nodes(".link-league") %>% html_text(trim = TRUE)
+  
+  # Validate league of the first two teams
+  if (length(leagues) < 2 || !all(leagues[1:2] %in% c("Bundesliga", "Germany 1. Bundesliga (1)"))) {
+    return(data.frame()) # Return empty data frame if the first two teams' leagues are not Bundesliga
+  }
+  
+  # Extract team names
+  teams <- page %>% html_nodes(".link-team") %>% html_text(trim = TRUE)
+  teams <- teams[seq(2,length(teams),2)]
+  
+  # Extract ratings
+  att <- page %>% html_nodes("td[data-title='ATT'] span") %>% html_text(trim = TRUE)
+  mid <- page %>% html_nodes("td[data-title='MID'] span") %>% html_text(trim = TRUE)
+  def <- page %>% html_nodes("td[data-title='DEF'] span") %>% html_text(trim = TRUE)
+  ovr <- page %>% html_nodes("td[data-title='OVR'] span") %>% html_text(trim = TRUE)
+  
+  if (length(att) == 0 || length(mid) == 0 || length(def) == 0 || length(ovr) == 0) {
+    return(data.frame()) # Return empty data frame if no ratings found
+  }
+  
+  date <- page %>% html_nodes("a.dropdown-toggle") %>% html_text(trim = TRUE) %>% .[6]
+
+  
+  data <- data.frame(
+    Team = teams,
+    Date = date,
+    Attack = as.numeric(att),
+    Midfield = as.numeric(mid),
+    Defense = as.numeric(def),
+    Overall = as.numeric(ovr),
+    stringsAsFactors = FALSE
+  )
+  
+  return(data)
+}
+
+# Initialize an empty data frame to store the results
+all_fifa_data <- data.frame()
+
+# Loop through all editions and their possible date values
+  for (id in 8:612) {
+    for (page in 1:max_pages) {
+      # Construct URL
+      if (page == 1) {
+        url <- paste0(base_url, "_", id, "/?", league_params)
+      } else {
+        url <- paste0(base_url, "_", id, "/?page=", page, "&", league_params)
+      }
+      
+      # Scrape data from the URL
+      data <- scrape_fifa_data(url)
+      if (nrow(data) == 0) break # If no data, exit the page loop
+      
+      # Append to the master dataset
+      all_fifa_data <- bind_rows(all_fifa_data, data)
+    }
+  }
+
+
+# Save the combined data to a CSV file
+write.csv(all_fifa_data, "Bundesliga_FIFA_Ratings_2012_2024.csv", row.names = FALSE)
+
+# Print the first few rows of the combined data
+head(all_fifa_data)
+
+
+
+```
+
+mnchengladbach
+
+
+mainz
+
+
+hamburg
+
+
+hertha
+
+
+hannover
+
+
+furth
+
+
+dusseldorf
+
+
+Nurnberg
+
+
+munich
+
+
+koln
+
+
+paderborn
+
+
+darmstadt
+
+## References
