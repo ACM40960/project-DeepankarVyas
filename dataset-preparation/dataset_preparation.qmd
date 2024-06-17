@@ -15,7 +15,7 @@ Here, we will web scrape data from `Football.co.uk[1]` website, for the last 9 s
 
 1.  Goals
 2.  Shots on Target
-3.   Corners
+3.  Corners
 4.  Fouls Commited
 5.  Yellow and Red Cards
 6.  Betting odds of various organizations
@@ -30,7 +30,8 @@ library(knitr)
 library(rvest)
 library(dplyr)
 library(stringr)
-
+library(lubridate)
+library(tidyr)
 ```
 
 ```{r}
@@ -63,11 +64,8 @@ download_and_read_csv <- function(season) {
 # Download and combine all CSV files into a master dataset
 master_dataset <- bind_rows(lapply(seasons, download_and_read_csv))
 
-# Save the master dataset to a CSV file
-write.csv(master_dataset, paste0("Bundesliga_2012_2024_master.csv"), row.names = FALSE)
-
-# Print the first few rows of the master dataset
-head(master_dataset)
+# Convert Date to Date type
+master_dataset$Date <- dmy(master_dataset$Date)
 
 
 
@@ -100,7 +98,7 @@ scrape_fifa_data <- function(url) {
   leagues <- page %>% html_nodes(".link-league") %>% html_text(trim = TRUE)
   
   # Validate league of the first two teams
-  if (length(leagues) < 2 || !all(leagues[1:2] %in% c("Bundesliga", "Germany 1. Bundesliga (1)"))) {
+  if (length(leagues) < 2 || !all(leagues[1:2] %in% c("Bundesliga", "Germany 1. Bundesliga (1)", "Bundesliga 2", "Germany 2. Bundesliga (2)"))) {
     return(data.frame()) # Return empty data frame if the first two teams' leagues are not Bundesliga
   }
   
@@ -154,52 +152,195 @@ all_fifa_data <- data.frame()
       # Append to the master dataset
       all_fifa_data <- bind_rows(all_fifa_data, data)
     }
+
   }
 
+#Scraping for June 4, 2024
+url1 = "https://fifaindex.com/teams/?league=19&league=20&order=desc"
+url2 = "https://fifaindex.com/teams/?page=2&league=19&league=20&order=desc"
 
-# Save the combined data to a CSV file
-write.csv(all_fifa_data, "Bundesliga_FIFA_Ratings_2012_2024.csv", row.names = FALSE)
+for (url in c(url1, url2)){
+  
+      data <- scrape_fifa_data(url)
+      if (nrow(data) == 0) {
+        }# If no data, do nothing
+      
+      else{
+        
+        all_fifa_data <- bind_rows(all_fifa_data, data)
+      }
+}
 
-# Print the first few rows of the combined data
-head(all_fifa_data)
+# Function to standardize month abbreviations
+standardize_month_abbreviations <- function(date_string) {
+  date_string <- str_replace_all(date_string, "Sept\\.", "Sep.")
+  return(date_string)
+}
+
+all_fifa_data$Date <- sapply(all_fifa_data$Date, standardize_month_abbreviations)
+
+# Convert Date to Date type
+all_fifa_data$Date=mdy(all_fifa_data$Date)
+
+# Ordering by date
+all_fifa_data <- all_fifa_data |> arrange(desc(Date))
 
 
 
 ```
 
-mnchengladbach
+```{r}
+#| label : Heuristic to combine team names
+
+unique_teams_master <- unique(c(master_dataset$HomeTeam, master_dataset$AwayTeam))
+
+# Define a mapping of alternative team names to standardized team names in master_dataset
+team_name_mapping <- list(
+  "Bayern Munich" = c("Bayern München", "FC Bayern München", "FC Bayern Munich"),
+  "Dortmund" = c("Borussia Dortmund"),
+  "RB Leipzig" = c("RB Leipzig"),
+  "Leverkusen" = c("Bayer 04 Leverkusen", "Leverkusen"),
+  "Ein Frankfurt" = c("Eintracht Frankfurt", "Frankfurt"),
+  "Hoffenheim" = c("TSG 1899 Hoffenheim", "TSG Hoffenheim", "1899 Hoffenheim"),
+  "Wolfsburg" = c("VfL Wolfsburg"),
+  "Freiburg" = c("SC Freiburg", "Sport-Club Freiburg"),
+  "Union Berlin" = c("1. FC Union Berlin", "Union Berlin"),
+  "M'gladbach" = c("Borussia Mönchengladbach", "Borussia M'gladbach", "M'gladbach", "Borussia Mönchengladbach"),
+  "Mainz" = c("1. FSV Mainz 05"),
+  "Werder Bremen" = c("Werder Bremen", "SV Werder Bremen"),
+  "Augsburg" = c("FC Augsburg"),
+  "Stuttgart" = c("VfB Stuttgart"),
+  "FC Koln" = c("1. FC Köln"),
+  "Bochum" = c("VfL Bochum", "VfL Bochum 1848"),
+  "Hertha" = c("Hertha BSC", "Hertha Berlin", "Hertha BSC Berlin"),
+  "Heidenheim" = c("1. FC Heidenheim", "1. FC Heidenheim 1846", "Heidenheim"),
+  "Hamburg" = c("Hamburger SV"),
+  "Schalke 04" = c("FC Schalke 04"),
+  "Darmstadt" = c("SV Darmstadt 98"),
+  "Hannover" = c("Hannover 96"),
+  "Fortuna Dusseldorf" = c("Fortuna Düsseldorf", "Düsseldorf"),
+  "1. FC Kaiserslautern" = c("1. FC Kaiserslautern", "Kaiserslautern"),
+  "Paderborn" = c("SC Paderborn 07"),
+  "Karlsruher SC" = c("Karlsruher SC"),
+  "FC St. Pauli" = c("FC St. Pauli"),
+  "Nurnberg" = c("1. FC Nürnberg", "1. FC Nuremberg"),
+  "Hansa Rostock" = c("Hansa Rostock"),
+  "1. FC Magdeburg" = c("1. FC Magdeburg"),
+  "Holstein Kiel" = c("Holstein Kiel"),
+  "Greuther Furth" = c("SpVgg Greuther Fürth", "Fürth"),
+  "Braunschweig" = c("Eintracht Braunschweig", "Braunschweig"),
+  "VfL Osnabrück" = c("VfL Osnabrück"),
+  "SV Elversberg" = c("SV Elversberg"),
+  "SV Wehen Wiesbaden" = c("SV Wehen Wiesbaden"),
+  "Bielefeld" = c("Arminia Bielefeld", "DSC Arminia Bielefeld"),
+  "SV Sandhausen" = c("SV Sandhausen", "SV Sandhausen 1916"),
+  "Jahn Regensburg" = c("Jahn Regensburg", "SSV Jahn Regensburg"),
+  "Würzburger Kickers" = c("Würzburger Kickers", "FC Würzburger Kickers"),
+  "Dynamo Dresden" = c("Dynamo Dresden", "SG Dynamo Dresden"),
+  "FSV Frankfurt" = c("FSV Frankfurt", "FSV Frankfurt 1899"),
+  "1860 München" = c("1860 München", "TSV 1860 München", "1860 Munich"),
+  "FC Energie Cottbus" = c("FC Energie Cottbus", "Energie Cottbus"),
+  "Alemannia Aachen" = c("Alemannia Aachen"),
+  "Ingolstadt" = c("FC Ingolstadt 04")
+)
+
+# Reverse the mapping for quick lookup
+reverse_mapping <- setNames(rep(names(team_name_mapping), lengths(team_name_mapping)), unlist(team_name_mapping))
+
+# Standardize team names in all_fifa_data
+all_fifa_data$Team <- unname(reverse_mapping[all_fifa_data$Team])
+
+# Filter records in all_fifa_data to keep only those teams that are present in master_dataset
+all_fifa_data <- all_fifa_data %>% filter(Team %in% unique_teams_master)
+```
+
+Now, we will Aggregate Ratings by Month and Year, so that each team has an Attack, Midfield, Defense and Overall Rating for each month of the years (2012-2024)
+
+```{r}
+#| label: Dataset-preparation-Aggregate_Ratings_by_Month_and_Year
 
 
-mainz
+# Extract Year and Month from Date
+all_fifa_data <- all_fifa_data %>%
+  mutate(Year = year(Date), Month = month(Date))
+
+# Calculate average ratings by Team, Year, and Month
+avg_ratings <- all_fifa_data %>%
+  group_by(Team, Year, Month) %>%
+  summarise(
+    Avg_Attack = round(mean(Attack, na.rm = TRUE)),
+    Avg_Midfield = round(mean(Midfield, na.rm = TRUE)),
+    Avg_Defense = round(mean(Defense, na.rm = TRUE)),
+    Avg_Overall = round(mean(Overall, na.rm = TRUE))
+  ) %>%
+  ungroup()
 
 
-hamburg
+
+```
+
+```{r}
+
+# Ensure avg_ratings has continuous month-year data for each team
+all_months <- expand.grid(Year = unique(avg_ratings$Year), Month = 1:12)
+all_teams_months <- expand.grid(Team = unique(avg_ratings$Team), Year = unique(avg_ratings$Year), Month = 1:12)
+
+avg_ratings_full <- all_teams_months %>%
+  left_join(avg_ratings, by = c("Team", "Year", "Month")) %>%
+  arrange(Team, Year, Month)
+
+# Fill in missing values with the nearest previous available values
+avg_ratings_full <- avg_ratings_full %>%
+  group_by(Team) %>%
+  fill(Avg_Attack, Avg_Midfield, Avg_Defense, Avg_Overall, .direction = "down") %>%
+  ungroup()
+
+# Removing NA values 
+avg_ratings_full <- avg_ratings_full %>%
+  filter(!(Year == 2011 & Month < 9))
+
+avg_ratings_full <- avg_ratings_full %>%
+  group_by(Team) %>%
+  fill(Avg_Attack, Avg_Midfield, Avg_Defense, Avg_Overall, .direction = "up") %>%
+  ungroup()
 
 
-hertha
 
+# Extract Year and Month from Date in master_dataset
+master_dataset <- master_dataset %>%
+  mutate(Year = year(Date), Month = month(Date))
 
-hannover
+# Join avg_ratings_full with master_dataset for HomeTeam
+master_dataset <- master_dataset %>%
+  left_join(avg_ratings_full, by = c("HomeTeam" = "Team", "Year", "Month")) %>%
+  rename(
+    Home_Attack = Avg_Attack,
+    Home_Midfield = Avg_Midfield,
+    Home_Defense = Avg_Defense,
+    Home_Overall = Avg_Overall
+  )
 
+# Join avg_ratings_full with master_dataset for AwayTeam
+master_dataset <- master_dataset %>%
+  left_join(avg_ratings_full, by = c("AwayTeam" = "Team", "Year", "Month"))  %>% 
+  rename(
+    Away_Attack = Avg_Attack,
+    Away_Midfield = Avg_Midfield,
+    Away_Defense = Avg_Defense,
+    Away_Overall = Avg_Overall
+  )
 
-furth
+# Remove extra columns
+master_dataset <- master_dataset %>%
+  select(-Year, -Month)
 
+# Save the final master dataset to a CSV file
+write.csv(master_dataset, "Bundesliga_Master_Dataset_Final.csv", row.names = FALSE)
 
-dusseldorf
-
-
-Nurnberg
-
-
-munich
-
-
-koln
-
-
-paderborn
-
-
-darmstadt
+```
 
 ## References
+
+```{r}
+
+```
