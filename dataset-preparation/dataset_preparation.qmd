@@ -20,7 +20,7 @@ Here, we will web scrape data from `Football.co.uk[1]` website, for the last 9 s
 5.  Yellow and Red Cards
 6.  Betting odds of various organizations
 
-We will be using Goals, Shots on Target , Corners of both the Home and Away teams as well as Result of the matches. We will we scarp data of the past 9-10 seasons i.e (2012/13-2023/24)
+We will be using Goals, Shots on Target , Corners of both the Home and Away teams as well as Result of the matches. We will scarp data of the past 9-10 seasons i.e (2012/13-2023/24)
 
 ```{r}
 #| label: dataset preparation - loading libraries
@@ -32,6 +32,9 @@ library(dplyr)
 library(stringr)
 library(lubridate)
 library(tidyr)
+library(furrr)
+library(data.table)
+library(purrr)
 ```
 
 ```{r}
@@ -189,6 +192,8 @@ all_fifa_data <- all_fifa_data |> arrange(desc(Date))
 
 ```
 
+The name of the teams are worded differently in both these websites . Therefore, we are using the names available in \``Football.co.uk[1]`\` as the reference, and combining the names to have a standard naming for all the teams.
+
 ```{r}
 #| label : Heuristic to combine team names
 
@@ -279,7 +284,11 @@ avg_ratings <- all_fifa_data %>%
 
 ```
 
+Now, we are merging the average ratings with the master dataset. We first found the average ratings of each team for each month of the year, wherever applicable and ten merged with the master dataset. We now have a dataset where we have ratings of each team (for each month) for each match.
+
 ```{r}
+#| label: Dataset-preparation-ratings_merge
+
 
 # Ensure avg_ratings has continuous month-year data for each team
 all_months <- expand.grid(Year = unique(avg_ratings$Year), Month = 1:12)
@@ -334,13 +343,176 @@ master_dataset <- master_dataset %>%
 master_dataset <- master_dataset %>%
   select(-Year, -Month)
 
-# Save the final master dataset to a CSV file
-write.csv(master_dataset, "Bundesliga_Master_Dataset_Final.csv", row.names = FALSE)
 
 ```
 
-## References
+Now, we will web scrap pre match expert reports from `whoscored.com`\[3\]. This will give us experts' opinion and will help us understand whether including experts' opinion help complement predictions generated through statistical features alone.
 
 ```{r}
+#| label: Dataset-preparation-Pre_match_reports
+
+# Function to scrape match data
+scrape_match_data <- function(match_id) {
+  url <- paste0("https://www.whoscored.com/Matches/", match_id, "/Preview/")
+  page <- read_html(url)
+  
+  # Check if the match is a Bundesliga match
+  league <- (page %>% html_nodes("a[href*='Germany-Bundesliga']") %>%
+  html_text(trim = TRUE))[1]
+
+  league <- str_trim(strsplit(league,split = "-")[[1]][1])
+
+  if ((!league == "Bundesliga") || (is.na(league))) {
+    return(NULL) # Return NULL if it is not a Bundesliga match
+  }
+  
+  cat("Match id processing - ", match_id, "\n")
+  
+  script_content <- page %>% html_nodes(xpath = "//script[contains(., 'matchheader')]") %>% html_text()
+  date_pattern <- "([0-9]{2}/[0-9]{2}/[0-9]{4})"
+  date <- str_extract(script_content, date_pattern)
+  
+  if (is.na(date)) {
+    message("No date found for match ID: ", match_id)
+    return(NULL)
+  }
+  
+  match_date <- dmy(date) # Convert to date format
+
+  team_news_elements <- page %>% html_nodes(xpath = '//*[contains(text(),"Team News")]/following-sibling::div') %>% html_text(trim = TRUE)
+  prediction <- page %>% html_nodes(xpath = '//*[contains(text(),"Prediction")]/following-sibling::div') %>% html_text(trim = TRUE)
+  
+  if (length(team_news_elements) == 0) {
+    message("No team news found for match ID: ", match_id)
+    return(NULL)
+  }
+
+  # Extract team names and their respective news
+  team_names <- str_split(team_news_elements, "\r\n\\s*\r\n")[[1]] |> str_trim()
+  team_news <- str_split(team_news_elements, "\r\n\\s*\r\n")[[2]] |> str_trim()
+  
+  # Formatting predictions
+  prediction_formatted <- str_split(prediction, "\r\n\\s*\r\n")[[1]][1] |> str_trim()
+  
+  if (length(team_news) < 2) {
+    message("Unexpected team news format for match ID: ", match_id)
+    return(NULL)
+  }
+  
+  # Format the team news
+  team_news_formatted <- paste0(
+    team_names[1], "'s team news states that ", team_news[1],
+    team_names[2], "'s team news states that ", team_news[2]
+  )
+  
+  preview <- paste(team_news_formatted, prediction_formatted, sep = "\n\n")
+  
+  data.frame(
+    Home_Team = team_names[1],
+    Away_Team = team_names[2],
+    Match_Id = match_id,
+    Match_date = match_date,
+    Preview = preview,
+    stringsAsFactors = FALSE
+  )
+}
+
+# Initialize parallel processing
+plan(multisession, workers = 8)  # Using 8 workers
+
+# Range of match IDs
+match_ids <- 621122:1743696
+
+# Split the range of match IDs into 8 parts
+split_match_ids <- split(match_ids, cut(match_ids, breaks = 8, labels = FALSE))
+
+# Function to safely scrape and return data
+safe_scrape <- function(match_id) {
+  tryCatch({
+    scrape_match_data(match_id)
+  }, error = function(e) {
+    message("Error with match ID: ", match_id, " - ", e$message)
+    return(NULL)
+  })
+}
+
+# Use furrr::future_map to scrape data in parallel for each part
+all_match_data <- map_dfr(split_match_ids, function(ids) {
+  match_data_list <- future_map(ids, safe_scrape, .progress = TRUE)
+  # Filter out NULL results and bind rows
+  bind_rows(match_data_list)
+})
+
+
 
 ```
+
+Standardizing the team names and merging the resultant dataset with our master dataset. Our final dataset would now contain a pre match report for every match played.
+
+```{r}
+#| label: Dataset-preparation-Final_merge
+
+# Mapping of team names
+team_name_mapping <- list(
+  "Borussia Dortmund" = "Dortmund",
+  "Hannover" = "Hannover",
+  "Stuttgart" = "Stuttgart",
+  "Freiburg" = "Freiburg",
+  "Augsburg" = "Augsburg",
+  "Hamburg" = "Hamburg",
+  "Eintracht Frankfurt" = "Ein Frankfurt",
+  "Greuther Fuerth" = "Greuther Furth",
+  "Borussia M.Gladbach" = "M'gladbach",
+  "Bayern" = "Bayern Munich",
+  "Schalke" = "Schalke 04",
+  "Mainz" = "Mainz",
+  "Werder Bremen" = "Werder Bremen",
+  "Fortuna Duesseldorf" = "Fortuna Dusseldorf",
+  "Nuernberg" = "Nurnberg",
+  "Hoffenheim" = "Hoffenheim",
+  "Leverkusen" = "Leverkusen",
+  "Wolfsburg" = "Wolfsburg",
+  "Eintracht Braunschweig" = "Braunschweig",
+  "Hertha Berlin" = "Hertha",
+  "FC Koln" = "FC Koln",
+  "Paderborn" = "Paderborn",
+  "Darmstadt" = "Darmstadt",
+  "Ingolstadt" = "Ingolstadt",
+  "RBL" = "RB Leipzig",
+  "Union Berlin" = "Union Berlin",
+  "Arminia Bielefeld" = "Bielefeld",
+  "Bochum" = "Bochum",
+  "FC Heidenheim" = "Heidenheim"
+)
+
+# Standardize team names in all_match_data
+all_match_data <- all_match_data %>%
+  mutate(
+    Home_Team = unlist(lapply(Home_Team, function(x) team_name_mapping[[x]])),
+    Away_Team = unlist(lapply(Away_Team, function(x) team_name_mapping[[x]]))
+  )
+
+# Order both datasets by date
+all_match_data <- all_match_data %>%
+  arrange(Match_date)
+
+master_dataset <- master_dataset %>%
+  arrange(date)
+
+# Append preview column to master_dataset
+master_dataset <- master_dataset %>%
+  left_join(all_match_data %>% select(Home_Team, Away_Team, Match_date, Preview),
+            by = c("HomeTeam" = "Home_Team", "AwayTeam" = "Away_Team", "Date" = "Match_date"))
+
+
+master_dataset <- master_dataset[!is.na(master_dataset$Preview) 
+                                 & master_dataset$Preview != "", ]
+
+# Save the master_dataset to a higher-level directory
+output_path <- "../Bundesliga_Master_Dataset_Final_09.34.41.csv"
+
+# Save the master_dataset to the specified path
+write.csv(master_dataset, file = output_path, row.names = FALSE)
+```
+
+## REFERENCES
