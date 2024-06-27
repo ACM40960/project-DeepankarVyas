@@ -507,12 +507,45 @@ master_dataset <- master_dataset %>%
 
 master_dataset <- master_dataset[!is.na(master_dataset$Preview) 
                                  & master_dataset$Preview != "", ]
+```
 
-# Save the master_dataset to a higher-level directory
+Adding `Season` and `Match_Time` columns:-
+
+```{r}
+#| label: Dataset-preparation-Season_and_Match_Time
+
+# Function to determine the season based on the month
+get_season <- function(date) {
+  month <- month(date)
+  if (month %in% c(3, 4, 5)) {
+    return("Spring")
+  } else if (month %in% c(6, 7, 8)) {
+    return("Summer")
+  } else if (month %in% c(9, 10, 11)) {
+    return("Autumn")
+  } else if (month %in% c(12, 1, 2)) {
+    return("Winter")
+  } else {
+    return(NA)
+  }
+}
+
+# Add Season column to the dataset
+master_dataset$Season <- sapply(master_dataset$Date, get_season)
+
+# Verify the addition of the new column
+head(master_dataset)
+
+# Save the updated master_dataset to a higher-level directory
 output_path <- "../Bundesliga_Master_Dataset_Final_09.34.41.csv"
 
 # Save the master_dataset to the specified path
 write.csv(master_dataset, file = output_path, row.names = FALSE)
+
+# Print a message confirming the save location
+cat("File saved to:", output_path, "\n")
+
+
 ```
 
 ## REFERENCES
