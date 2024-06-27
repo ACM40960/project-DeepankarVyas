@@ -533,8 +533,8 @@ get_season <- function(date) {
 # Add Season column to the dataset
 master_dataset$Season <- sapply(master_dataset$Date, get_season)
 
-# Verify the addition of the new column
-head(master_dataset)
+# Add Day_of_Week column to the dataset
+master_dataset$Day_of_Week <- wday(master_dataset$Date, label = TRUE)
 
 # Save the updated master_dataset to a higher-level directory
 output_path <- "../Bundesliga_Master_Dataset_Final_09.34.41.csv"
@@ -542,8 +542,7 @@ output_path <- "../Bundesliga_Master_Dataset_Final_09.34.41.csv"
 # Save the master_dataset to the specified path
 write.csv(master_dataset, file = output_path, row.names = FALSE)
 
-# Print a message confirming the save location
-cat("File saved to:", output_path, "\n")
+
 
 
 ```
