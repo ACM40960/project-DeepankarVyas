@@ -1,0 +1,590 @@
+---
+title: "Dataset Preparation"
+author: Deepankar Vyas, 23200527
+format:
+  html:
+    embed-resources: true
+  pdf: default
+execute: 
+  warning: false
+---
+
+```{r}
+#| label: libraries
+#| echo: false
+
+library(dplyr)
+library(zoo)
+
+```
+
+## FEATURE ENGINEERING
+
+We will now start with feature engineering to be used as features for final prediction. We will engineer namely these features:-
+
+1.  Corners
+2.  Shots on Traget
+3.  Goals
+4.  Goal Difference
+5.  Ratings
+6.  Streak
+7.  Weighted Streak
+8.  Form
+
+We will start with Corners, Goals and Shots on Target.
+
+For $\mu^{i} \in \{\text{Corners, Shots on Target, Goals}\}$, $\mu^{i}$ for a team's jth match is defined as:
+
+$\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$
+
+`k` is taken as 5. `k` denotes the previous k matches of each team taken into consideration while engineering features. This helps to take into account the recent performances of a team. `k` is chosen to be 5 as the previous 5 matches seem to be a good enough measure of a team's recent form.
+
+```{r}
+#| label: Feature-engineering_Corners_ShotsOnTarget_Goals
+#| warning: false
+
+
+# Reading the dataset
+master_dataset <- read.csv("../Bundesliga_Master_Dataset_Final_09.34.41.csv")
+
+# Ensuring the data is sorted by date
+master_dataset <- master_dataset %>%
+  arrange(Date)
+
+# Defining a function to calculate the KPP for Goals, Corners, and Shots on Target
+calculate_kpp <- function(df, k = 5) {
+  teams <- unique(df$HomeTeam)
+  
+  # Initializing new columns for KPP features
+  df <- df %>%
+    mutate(
+      HGKPP = NA,
+      AGKPP = NA,
+      HCKPP = NA,
+      ACKPP = NA,
+      HSTKPP = NA,
+      ASTKPP = NA
+    )
+  
+  for (team in teams) {
+    # Filtering matches where the team is either home or away
+    temp_df <- df %>%
+      filter(HomeTeam == team | AwayTeam == team) %>%
+      arrange(Date)
+    
+    # Calculating KPP for goals, corners, and shots on target
+    goals <- numeric(nrow(temp_df))
+    corners <- numeric(nrow(temp_df))
+    shots_on_target <- numeric(nrow(temp_df))
+    
+    for (i in 1:nrow(temp_df)) {
+      if (temp_df$HomeTeam[i] == team) {
+        goals[i] <- temp_df$FTHG[i]
+        corners[i] <- temp_df$HC[i]
+        shots_on_target[i] <- temp_df$HST[i]
+      } else if (temp_df$AwayTeam[i] == team) {
+        goals[i] <- temp_df$FTAG[i]
+        corners[i] <- temp_df$AC[i]
+        shots_on_target[i] <- temp_df$AST[i]
+      }
+    }
+    
+    # Calculating KPP values
+    goals_kpp <- rep(NA, nrow(temp_df))
+    corners_kpp <- rep(NA, nrow(temp_df))
+    shots_on_target_kpp <- rep(NA, nrow(temp_df))
+    
+    for (i in (k + 1):nrow(temp_df)) {
+      goals_kpp[i] <- mean(goals[(i - k):(i - 1)])
+      corners_kpp[i] <- mean(corners[(i - k):(i - 1)])
+      shots_on_target_kpp[i] <- mean(shots_on_target[(i - k):(i - 1)])
+    }
+    
+    # Assigning KPP values back to the main dataframe
+    for (i in 1:nrow(temp_df)) {
+      if (temp_df$HomeTeam[i] == team) {
+        df$HGKPP[df$HomeTeam == team & df$Date == temp_df$Date[i]] <- goals_kpp[i]
+        df$HCKPP[df$HomeTeam == team & df$Date == temp_df$Date[i]] <- corners_kpp[i]
+        df$HSTKPP[df$HomeTeam == team & df$Date == temp_df$Date[i]] <- shots_on_target_kpp[i]
+      } else if (temp_df$AwayTeam[i] == team) {
+        df$AGKPP[df$AwayTeam == team & df$Date == temp_df$Date[i]] <- goals_kpp[i]
+        df$ACKPP[df$AwayTeam == team & df$Date == temp_df$Date[i]] <- corners_kpp[i]
+        df$ASTKPP[df$AwayTeam == team & df$Date == temp_df$Date[i]] <- shots_on_target_kpp[i]
+      }
+    }
+  }
+  
+  # Calculating the difference between home and away KPP features
+  df <- df %>%
+    mutate(
+      GKPP = HGKPP - AGKPP,
+      CKPP = HCKPP - ACKPP,
+      STKPP = HSTKPP - ASTKPP
+    )
+  
+  return(df)
+}
+
+calculate_kpp_by_season <- function(df, k = 5) {
+  df <- df %>%
+    mutate(Season = ifelse(month(Date) %in% c("8", "9", "10", "11", "12"), 
+                           year(Date), as.numeric(year(Date)) - 1))
+  
+  seasons <- unique(df$Season)
+  final_df <- data.frame()
+  
+  for (season in seasons) {
+    season_df <- df %>%
+      filter(Season == season)
+    
+    season_df <- calculate_kpp(season_df, k)
+    
+    final_df <- bind_rows(final_df, season_df)
+  }
+  
+  # Moving the Season column to the beginning
+  final_df <- final_df %>%
+    select(Season, everything())
+  
+  return(final_df)
+}
+
+# Applying the KPP calculation function by season
+master_dataset <- calculate_kpp_by_season(master_dataset)
+
+```
+
+Now , we will engineer FORM. Form is feature which takes recent performances of a team into account based on the opposition. The Form value of each team starts at one at the beginning of each season and is updated after each match. A higher Form value indicates a better team performance. When a team `A` beats another team `B` , the Form value for each team after the j-th match is updated as follows:
+
+When team `A` beats team `B` :
+
+$F_{j}^{A} = F_{(j-1)}^{A} + \gamma F_{(j-1)}^{B}$
+
+$F_{j}^{B} = F_{(j-1)}^{B} - \gamma F_{(j-1)}^{B}$
+
+​In case of a draw:
+
+$F_{j}^{A} = F_{(j-1)}^{A} - \gamma (F_{(j-1)}^{A} - F_{(j-1)}^{B})$
+
+$F_{j}^{B} = F_{(j-1)}^{B} - \gamma (F_{(j-1)}^{B} - F_{(j-1)}^{A})$
+
+where $\gamma$ is the stealing fraction and is within the range (0,1) .
+
+When team `A` beats team `B`, the Form updates can be interpreted as team `A` stealing a portion ( $\gamma$ ) of the Form of team `B` . Since this fraction is proportional to the Form value of the teams, larger updates are given for beating stronger teams (high Form value) compared to beating weaker teams (low Form value).
+
+In the event of a draw, the weaker team receives a positive update and the stronger team a negative update. The size of the update is proportional to the difference between the teams' Form values at the start of the match. Therefore, the update will be small when the Form values are similar and large when they are different. The optimal solution for $\gamma$ was found to be 0.33 after cross-validation.
+
+```{r}
+#| label: Feature-engineering_Form
+#| warning: false
+
+# Ensure the data is sorted by date and convert Date to Date format
+master_dataset <- master_dataset %>%
+  arrange(Date)
+
+# Define a function to calculate the form
+calculate_form <- function(df, gamma = 0.33) {
+  # Extract unique teams
+  teams <- unique(c(df$HomeTeam, df$AwayTeam))
+  
+  # Initialize form columns
+  df <- df %>%
+    mutate(
+      HForm = NA,
+      AForm = NA,
+      Form = NA
+    )
+  
+  # Initialize form dictionary
+  form_dict <- setNames(rep(1.0, length(teams)), teams)
+  initial_form_set <- setNames(rep(FALSE, length(teams)), teams)
+  
+  # Loop through each match to calculate form
+  for (i in 1:nrow(df)) {
+    home_team <- df$HomeTeam[i]
+    away_team <- df$AwayTeam[i]
+    result <- df$FTR[i]
+    
+    if (!initial_form_set[[home_team]]) {
+      home_form <- 1.0
+      initial_form_set[[home_team]] <- TRUE
+    } else {
+      home_form <- form_dict[[home_team]]
+    }
+    
+    if (!initial_form_set[[away_team]]) {
+      away_form <- 1.0
+      initial_form_set[[away_team]] <- TRUE
+    } else {
+      away_form <- form_dict[[away_team]]
+    }
+    
+    if (result == 'H') {
+      new_home_form <- home_form + gamma * away_form
+      new_away_form <- away_form - gamma * away_form
+    } else if (result == 'A') {
+      new_home_form <- home_form - gamma * home_form
+      new_away_form <- away_form + gamma * home_form
+    } else if (result == 'D') {
+      new_home_form <- home_form - gamma * (home_form - away_form)
+      new_away_form <- away_form - gamma * (away_form - home_form)
+    }
+    
+    # Update the dataframe with new form values for the current match
+    df$HForm[i] <- home_form
+    df$AForm[i] <- away_form
+    
+    # Update the form dictionary with new values
+    form_dict[[home_team]] <- new_home_form
+    form_dict[[away_team]] <- new_away_form
+  }
+  
+  # Calculate the difference in form between home and away teams
+  df <- df %>%
+    mutate(Form = HForm - AForm)
+  
+  return(df)
+}
+
+# Define a function to apply the form calculation by season
+calculate_form_by_season <- function(df, gamma = 0.33) {
+  # Add a Season column
+  df <- df %>%
+    mutate(Season = ifelse(month(Date) %in% c(8, 9, 10, 11, 12), 
+                           year(Date), as.numeric(year(Date)) - 1))
+  
+  # Extract unique seasons
+  seasons <- unique(df$Season)
+  final_df <- data.frame()
+  
+  # Loop through each season
+  for (season in seasons) {
+    # Filter matches for the season
+    season_df <- df %>%
+      filter(Season == season)
+    
+    # Apply form calculation for the season
+    season_df <- calculate_form(season_df, gamma)
+    
+    # Combine results
+    final_df <- bind_rows(final_df, season_df)
+  }
+  
+  # Move the Season column to the beginning
+  final_df <- final_df %>%
+    select(Season, everything())
+  
+  return(final_df)
+}
+
+# Apply the form calculation function by season
+master_dataset <- calculate_form_by_season(master_dataset)
+
+```
+
+Now we will engineer Streak and Weighted Streak. To evaluate recent team performances in football predictions, we introduce the **Streak** and **Weighted Streak** features. The Streak feature captures recent performance trends by averaging scores of previous `k` matches. The Weighted Streak adds time-dependent weights, giving more importance to recent games.
+
+Mathematically, the **Streak** ( $\delta$ ) for a team's `j`-th match is:
+
+$\delta_j = \left( \sum_{p=j-k}^{j-1} \text{resp}_p \right) / 3k$
+
+The **Weighted Streak** ( $\omega$ ) is defined as:
+
+$\omega_j = \sum_{p=j-k}^{j-1} \frac{2(p - (j - k - 1) \text{resp}_p)}{3k(k + 1)}$ ​​
+
+Here, $\text{resp}_p \in \{0, 1, 3\}$ for Loss, Draw, and Win, respectively. Both features are normalized to ensure values between zero and one.
+
+```{r}
+#| label: Feature-engineering_Streak_Weighted_streak
+#| warning: false
+
+# Ensuring the data is sorted by date and converting Date to Date format
+master_dataset <- master_dataset %>%
+  arrange(Date)
+
+# Defining a function to calculate Streak and Weighted Streak
+calculate_streak <- function(df, k = 5) {
+  teams <- unique(df$HomeTeam)
+  
+  # Initializing new columns for Streak features
+  df <- df %>%
+    mutate(
+      HSt = NA,
+      ASt = NA,
+      HStWeighted = NA,
+      AStWeighted = NA
+    )
+  
+  # Looping through each team to calculate streak
+  for (team in teams) {
+    # Filtering matches where the team is either home or away and arranging by date
+    temp_df <- df %>%
+      filter(HomeTeam == team | AwayTeam == team) %>%
+      arrange(Date)
+    
+    match_points <- numeric(nrow(temp_df))
+    
+    # Looping through each match of the team to assign match points
+    for (i in 1:nrow(temp_df)) {
+      if (temp_df$HomeTeam[i] == team) {
+        if (temp_df$FTHG[i] > temp_df$FTAG[i]) {
+          match_points[i] <- 3
+        } else if (temp_df$FTHG[i] == temp_df$FTAG[i]) {
+          match_points[i] <- 1
+        } else {
+          match_points[i] <- 0
+        }
+      } else if (temp_df$AwayTeam[i] == team) {
+        if (temp_df$FTAG[i] > temp_df$FTHG[i]) {
+          match_points[i] <- 3
+        } else if (temp_df$FTAG[i] == temp_df$FTHG[i]) {
+          match_points[i] <- 1
+        } else {
+          match_points[i] <- 0
+        }
+      }
+    }
+    
+    # Calculating Streak and Weighted Streak values
+    streak <- rep(NA, nrow(temp_df))
+    weighted_streak <- rep(NA, nrow(temp_df))
+    
+    weight_list <- 1:k
+    
+    # Looping through each match to calculate streak and weighted streak
+    for (i in (k + 1):nrow(temp_df)) {
+      match_points_slice <- match_points[(i - k):(i - 1)]
+      streak[i] <- sum(match_points_slice) / (3 * k)
+      weighted_streak[i] <- sum((1:k) * match_points_slice) / ((1.5) * k * (k + 1))
+    }
+    
+    # Assigning Streak values back to the main dataframe
+    for (i in 1:nrow(temp_df)) {
+      if (temp_df$HomeTeam[i] == team) {
+        df$HSt[df$HomeTeam == team & df$Date == temp_df$Date[i]] <- streak[i]
+        df$HStWeighted[df$HomeTeam == team & df$Date == temp_df$Date[i]] <- weighted_streak[i]
+      } else if (temp_df$AwayTeam[i] == team) {
+        df$ASt[df$AwayTeam == team & df$Date == temp_df$Date[i]] <- streak[i]
+        df$AStWeighted[df$AwayTeam == team & df$Date == temp_df$Date[i]] <- weighted_streak[i]
+      }
+    }
+  }
+  
+  # Calculating the difference between home and away Streak features
+  df <- df %>%
+    mutate(
+      Streak = HSt - ASt,
+      WeightedStreak = HStWeighted - AStWeighted
+    )
+  
+  return(df)
+}
+
+# Defining a function to apply the Streak calculation by season
+calculate_streak_by_season <- function(df, k = 5) {
+  # Adding a Season column
+  df <- df %>%
+    mutate(Season = ifelse(month(Date) %in% c(8, 9, 10, 11, 12), 
+                           year(Date), as.numeric(year(Date)) - 1))
+  
+  # Extracting unique seasons
+  seasons <- unique(df$Season)
+  final_df <- data.frame()
+  
+  # Looping through each season
+  for (season in seasons) {
+    # Filtering matches for the season
+    season_df <- df %>%
+      filter(Season == season)
+    
+    # Applying streak calculation for the season
+    season_df <- calculate_streak(season_df, k)
+    
+    # Combining results
+    final_df <- bind_rows(final_df, season_df)
+  }
+  
+  # Moving the Season column to the beginning
+  final_df <- final_df %>%
+    select(Season, everything())
+  
+  return(final_df)
+}
+
+# Applying the Streak calculation function by season
+master_dataset <- calculate_streak_by_season(master_dataset)
+
+
+```
+
+Now we will engineer Goal Difference. The **Goal Difference (GD)** is crucial in football predictive models. It is calculated as the difference between the cumulative goals scored and goals conceded by a team up to a specific match.
+
+Mathematically, the Goal Difference for a team's `k-th` match is defined as:
+
+$GD_k = \sum_{j=1}^{k-1} \text{GS}_j - \sum_{j=1}^{k-1} \text{GC}_j$​
+
+where $\text{GS} = \text{Goals Scored}, \text{GC} = \text{Goals Conceded}$ .
+
+```{r}
+#| label: Feature-engineering_Goal_Difference
+#| warning: false 
+
+# Ensuring the data is sorted by date and converting Date to Date format
+master_dataset <- master_dataset %>%
+  arrange(Date)
+
+# Defining a function to calculate Goal Difference
+calculate_goal_difference <- function(df) {
+  teams <- unique(df$HomeTeam)
+  
+  # Initializing new columns for Goal Difference features
+  df <- df %>%
+    mutate(
+      HTGD = NA,
+      ATGD = NA
+    )
+  
+  # Looping through each team to calculate goal difference
+  for (team in teams) {
+    # Filtering matches where the team is either home or away and arranging by date
+    temp_df <- df %>%
+      filter(HomeTeam == team | AwayTeam == team) %>%
+      arrange(Date)
+    
+    MGDList <- numeric(nrow(temp_df))
+    GDList <- numeric(nrow(temp_df))
+    
+    home_first <- TRUE
+    away_first <- TRUE
+    
+    # Looping through each match of the team to calculate match goal difference
+    for (i in 1:nrow(temp_df)) {
+      if (temp_df$HomeTeam[i] == team) {
+        MGDList[i] <- temp_df$FTHG[i] - temp_df$FTAG[i]
+        if (home_first) {
+          GDList[i] <- 0
+          home_first <- FALSE
+        } else {
+          GDList[i] <- sum(MGDList[1:(i - 1)])
+        }
+      } else if (temp_df$AwayTeam[i] == team) {
+        MGDList[i] <- temp_df$FTAG[i] - temp_df$FTHG[i]
+        if (away_first) {
+          GDList[i] <- 0
+          away_first <- FALSE
+        } else {
+          GDList[i] <- sum(MGDList[1:(i - 1)])
+        }
+      }
+    }
+    
+    # Normalizing Goal Difference values
+    GDList <- GDList / 100
+    
+    # Assigning Goal Difference values back to the main dataframe
+    for (i in 1:nrow(temp_df)) {
+      if (temp_df$HomeTeam[i] == team) {
+        df$HTGD[df$HomeTeam == team & df$Date == temp_df$Date[i]] <- GDList[i]
+      } else if (temp_df$AwayTeam[i] == team) {
+        df$ATGD[df$AwayTeam == team & df$Date == temp_df$Date[i]] <- GDList[i]
+      }
+    }
+  }
+  
+  # Calculating the difference between home and away Goal Difference features
+  df <- df %>%
+    mutate(GD = HTGD - ATGD)
+  
+  return(df)
+}
+
+# Defining a function to apply the Goal Difference calculation by season
+calculate_goal_difference_by_season <- function(df) {
+  # Adding a Season column
+  df <- df %>%
+    mutate(Season = ifelse(month(Date) %in% c(8, 9, 10, 11, 12), 
+                           year(Date), as.numeric(year(Date)) - 1))
+  
+  # Extracting unique seasons
+  seasons <- unique(df$Season)
+  final_df <- data.frame()
+  
+  # Looping through each season
+  for (season in seasons) {
+    # Filtering matches for the season
+    season_df <- df %>%
+      filter(Season == season)
+    
+    # Applying goal difference calculation for the season
+    season_df <- calculate_goal_difference(season_df)
+    
+    # Combining results
+    final_df <- bind_rows(final_df, season_df)
+  }
+  
+  # Moving the Season column to the beginning
+  final_df <- final_df %>%
+    select(Season, everything())
+  
+  return(final_df)
+}
+
+# Applying the Goal Difference calculation function by season
+master_dataset <- calculate_goal_difference_by_season(master_dataset)
+
+```
+
+We will add two more features to our dataset - Season of the year (Spring, Autumn, Summer or Winter) and the Result of the match (Home win or Away win).
+
+```{r}
+#| label: Feature-engineering_Season_Result
+
+# Ensuring the data is sorted by date and convert Date to Date format
+master_dataset <- master_dataset %>%
+  arrange(Date)
+
+# Defining a function to calculate the Result
+calculate_result <- function(df) {
+  df <- df %>%
+    mutate(Result = case_when(
+      FTHG > FTAG ~ "HOME_WIN",
+      FTHG < FTAG ~ "AWAY_WIN",
+      TRUE ~ "DRAW"
+    ))
+  return(df)
+}
+
+# Defining a function to calculate the Season
+calculate_season <- function(df) {
+  df <- df %>%
+    mutate(Season = case_when(
+      month(Date) %in% 3:5 ~ "Spring",
+      month(Date) %in% 6:8 ~ "Summer",
+      month(Date) %in% 9:11 ~ "Autumn",
+      TRUE ~ "Winter"
+    ))
+  return(df)
+}
+
+
+# Applying the Result and Season calculation functions
+master_dataset <- master_dataset %>%
+  calculate_result() %>%
+  calculate_season()
+```
+
+```{r}
+
+test_df_bvb=master_dataset |> filter(HomeTeam=="Dortmund" | AwayTeam=="Dortmund") |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
+
+
+test_df_fcb=master_dataset |> filter(HomeTeam=="Bayern Munich" | AwayTeam=="Bayern Munich") |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
+
+test_df_s=master_dataset |> filter(HomeTeam=="Stuttgart" | AwayTeam=="Stuttgart") |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
+
+test_df_all=master_dataset |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
+```
+
+```{r}
+
+```
