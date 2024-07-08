@@ -1,0 +1,102 @@
+---
+title: "Dataset_Cleanup_Preprocessing"
+author: Deepankar Vyas, 23200527
+format:
+  html:
+    embed-resources: true
+  pdf: default
+execute: 
+  warning: false
+---
+
+Now, after finally engineering our features and getting dataset ready, we will do the final cleanup and preprocessing to make our data ready for EDA. We will cover the following steps :-
+
+1.  Remove unwanted columns
+2.  Remove NA values
+3.  Train - Test splitting
+4.  Scaling
+
+```{r}
+#| label: dataset_cleanup_preprocessing
+#| warning: false
+
+# Loading necessary libraries
+library(dplyr)
+library(caret)
+
+# Loading the dataset
+master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
+
+# Step 1: Keeping only the specified columns
+selected_columns <- c("Season", "FTR", "B365H", "B365D", "B365A", 
+                      "Home_Attack", "Home_Midfield", 
+                      "Home_Defense", "Home_Overall", "Away_Attack", 
+                      "Away_Midfield", "Away_Defense", 
+                      "Away_Overall", "Preview", "Day_of_Week", "HGKPP", 
+                      "AGKPP", "HCKPP", "ACKPP", 
+                      "HSTKPP", "ASTKPP", "GKPP", "CKPP", "STKPP", 
+                      "HForm", "AForm", "Form", "HSt", 
+                      "ASt", "HStWeighted", "AStWeighted", "Streak", 
+                      "WeightedStreak", "HTGD", "ATGD", 
+                      "GD", "AttDiff", "MidDiff", "DefDiff", "OverallDiff")
+master_dataset <- master_dataset %>% select(all_of(selected_columns))
+
+# Step 2: Removing rows with NA values in specified columns
+columns_to_check <- c("HGKPP", "AGKPP", "HCKPP", "ACKPP", 
+                      "HSTKPP", "ASTKPP", "GKPP", "CKPP", 
+                      "STKPP", "HSt", "ASt", "HStWeighted", 
+                      "AStWeighted", "Streak", "WeightedStreak")
+master_dataset <- master_dataset %>% filter(across(all_of(columns_to_check), ~ !is.na(.)))
+
+# Step 3: Splitting data into training and test sets
+set.seed(23200527)
+train_indices <- createDataPartition(master_dataset$FTR, p = 0.8, list = FALSE)
+train_data <- master_dataset[train_indices, ]
+test_data <- master_dataset[-train_indices, ]
+
+# Step 4: Standardizing the numeric columns
+numeric_columns <- sapply(train_data, is.numeric)
+
+# Scaling the numeric columns of the training data
+x_scale <- scale(train_data[, numeric_columns])
+train_data[, numeric_columns] <- x_scale
+
+# Scaling the numeric columns of the test data on the same scale
+test_data[, numeric_columns] <- scale(test_data[, numeric_columns], 
+                                      center = attr(x_scale, "scaled:center"), 
+                                      scale = attr(x_scale, "scaled:scale"))
+
+# Step 5: Creating Class A and Class B datasets
+# Creating Class A: Training data with features for both home and away teams
+class_a_train <- train_data %>% select(-c(GD, Streak, WeightedStreak,
+                                          Form, STKPP, GKPP, CKPP, B365H, 
+                                          B365D, B365A, AttDiff, MidDiff,
+                                          DefDiff, OverallDiff))
+
+# Creating Class B: Training data with differential features only
+class_b_train <- train_data %>% select(c("Season", "FTR","Preview", 
+                                         "Day_of_Week", "GKPP", 
+                                         "CKPP", "STKPP", "Form", 
+                                         "Streak", "WeightedStreak", "GD", "AttDiff",
+                                         "MidDiff", "DefDiff", "OverallDiff"))
+
+# Creating Class A: Test data with features for both home and away teams
+class_a_test <- test_data %>% select(-c(GD, Streak, WeightedStreak,
+                                        Form, STKPP, GKPP, CKPP, B365H, 
+                                        B365D, B365A, AttDiff, MidDiff, 
+                                        DefDiff, OverallDiff))
+
+# Creating Class B: Test data with differential features only
+class_b_test <- test_data %>% select(c("Season", "FTR","Preview", 
+                                         "Day_of_Week", "GKPP", 
+                                         "CKPP", "STKPP", "Form", 
+                                         "Streak", "WeightedStreak", "GD", "AttDiff",
+                                         "MidDiff", "DefDiff", "OverallDiff"))
+
+# Saving the cleaned and scaled datasets
+write.csv(class_a_train, "../Dataset/class_a_train.csv", row.names = FALSE)
+write.csv(class_a_test, "../Dataset/class_a_test.csv", row.names = FALSE)
+write.csv(class_b_train, "../Dataset/class_b_train.csv", row.names = FALSE)
+write.csv(class_b_test, "../Dataset/class_b_test.csv", row.names = FALSE)
+write.csv(master_dataset,"../Dataset/Master_Dataset.csv")
+```

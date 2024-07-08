@@ -45,7 +45,7 @@ $\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$
 
 
 # Reading the dataset
-master_dataset <- read.csv("../Bundesliga_Master_Dataset_Final_09.34.41.csv")
+master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
 
 # Ensuring the data is sorted by date
 master_dataset <- master_dataset %>%
@@ -534,25 +534,15 @@ master_dataset <- calculate_goal_difference_by_season(master_dataset)
 
 ```
 
-We will add two more features to our dataset - Season of the year (Spring, Autumn, Summer or Winter) and the Result of the match (Home win or Away win).
+We will add two more features to our dataset - Season of the year (Spring, Autumn, Summer or Winter) and the Differential Ratings (which will be the difference between the Home and Away team ratings in Attack, Defense, Midfield and Overall).
 
 ```{r}
-#| label: Feature-engineering_Season_Result
+#| label: Feature-engineering_Season-Rating_Differential
 
 # Ensuring the data is sorted by date and convert Date to Date format
 master_dataset <- master_dataset %>%
   arrange(Date)
 
-# Defining a function to calculate the Result
-calculate_result <- function(df) {
-  df <- df %>%
-    mutate(Result = case_when(
-      FTHG > FTAG ~ "HOME_WIN",
-      FTHG < FTAG ~ "AWAY_WIN",
-      TRUE ~ "DRAW"
-    ))
-  return(df)
-}
 
 # Defining a function to calculate the Season
 calculate_season <- function(df) {
@@ -569,22 +559,23 @@ calculate_season <- function(df) {
 
 # Applying the Result and Season calculation functions
 master_dataset <- master_dataset %>%
-  calculate_result() %>%
   calculate_season()
+
+# Adding differential ratings
+master_dataset <- master_dataset %>%
+  mutate(
+    AttDiff = Home_Attack - Away_Attack,
+    MidDiff = Home_Midfield - Away_Midfield,
+    DefDiff = Home_Defense - Away_Defense,
+    OverallDiff = Home_Overall - Away_Overall
+  )
 ```
 
-```{r}
-
-test_df_bvb=master_dataset |> filter(HomeTeam=="Dortmund" | AwayTeam=="Dortmund") |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
-
-
-test_df_fcb=master_dataset |> filter(HomeTeam=="Bayern Munich" | AwayTeam=="Bayern Munich") |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
-
-test_df_s=master_dataset |> filter(HomeTeam=="Stuttgart" | AwayTeam=="Stuttgart") |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
-
-test_df_all=master_dataset |> select(Date,HomeTeam,AwayTeam,FTHG,FTAG,HST,AST,HC,AC,HGKPP,AGKPP,HCKPP,ACKPP,HSTKPP,ASTKPP,GKPP,CKPP,STKPP,HForm,AForm,Form,HSt,HStWeighted,ASt,AStWeighted,Streak,WeightedStreak,HTGD,ATGD,GD,Season,Result)
-```
+Writing the master dataset back to csv file.
 
 ```{r}
+#| label: writing_to_csv
+
+write.csv(master_dataset,"../Dataset/Master_Dataset.csv")
 
 ```
