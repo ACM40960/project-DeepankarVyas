@@ -325,7 +325,7 @@ dev.off()
 
 -   **Key Insight**: Words like "team," "news," "injury," "games," and "return" are prominent, suggesting these are common themes in the sports news corpus.
 
-### **Feature Selection**  {.small}
+### **Feature Selection** {.small}
 
 We will use Correlation matrix to remove highly correlated variables (\> \|0.8\|) . We will then use BORUTA package for further variable selection. Boruta package is based on Boruta algorithm, which used Random forest as the baseline to determine variables which are deemed important, based on the reduction in impurity.
 

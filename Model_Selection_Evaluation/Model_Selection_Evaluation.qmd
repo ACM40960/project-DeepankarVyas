@@ -1,0 +1,126 @@
+---
+title: "Model_Selection_Evaluation"
+format: html
+editor: visual
+---
+
+## MODEL SELECTION, GENERALIZED PERFORMANCE EVALUATION AND TESTING AGAINST BENCHMARK SETTING {.smaller}
+
+### Model Selection
+
+We trained the following models for CLASS A and CLASS A NLP datasets :-
+
+1.  Logistic Regression
+2.  SVM with Polynomial Kernel
+3.  SVM with Gaussia Kernle
+4.  Random Forest
+5.  Neural Networks
+
+And the following models were trained for CLASS B and CLASS B NLP :-
+
+1.  SVM with Polynomial Kernel
+2.  SVM with Gaussia Kernle
+3.  Random Forest
+4.  Neural Networks
+
+We now have to find the best performing model and the dataset which performs the best. We will use usual evaluation metrics to select the best performing model (Balanced Accuracy, Precision, Recall, F1-Score, AUC-ROC) with a special emphasis on the DRAW class as it is the hardest to predict. The final model will be retrained on the entire training + validation set and then used to predict the test set, to determine its generalized predictive performance. We will also use specialized performance metric - RANKED PROBABILITY SCORE to determine how our selected model performed against the models employed by the betting companies.
+
+```{r}
+#| label: loading models
+
+results_class_a <- readRDS("../training-tuning_testing/results_class_a.rds")
+
+results_class_a_nlp <- readRDS("../training-tuning_testing/results_class_a_nlp.rds")
+
+results_class_b <- readRDS("../training-tuning_testing/results_class_b.rds")
+
+results_class_b_nlp <- readRDS("../training-tuning_testing/results_class_b_nlp.rds")
+
+```
+
+```{r}
+#| label: Model Selection
+
+library(ggplot2)
+library(caret)
+library(dplyr)
+library(tidyr)
+
+# Function to calculate metrics
+calculate_metrics <- function(model, test_data, actual_class_col) {
+  predicted <- predict(model, test_data)
+  confusion <- confusionMatrix(predicted, test_data[[actual_class_col]])
+  
+  metrics <- data.frame(
+    Class = levels(test_data[[actual_class_col]]),
+    Sensitivity = confusion$byClass[, "Sensitivity"],
+    Specificity = confusion$byClass[, "Specificity"],
+    Balanced_Accuracy = (confusion$byClass[, "Sensitivity"] + confusion$byClass[, "Specificity"]) / 2,
+    F1_Score = confusion$byClass[, "F1"],
+    Precision = confusion$byClass[, "Precision"]
+  )
+  
+  overall_metrics <- data.frame(
+    Metric = c("Accuracy", "Kappa"),
+    Value = c(confusion$overall["Accuracy"], confusion$overall["Kappa"])
+  )
+  
+  return(list(confusion_matrix = confusion$table, class_metrics = metrics, overall_metrics = overall_metrics))
+}
+
+# Function to plot metrics
+plot_metrics <- function(metrics_list, metric_col, metric_name, title) {
+  metrics_combined <- bind_rows(metrics_list, .id = "Model")
+  
+  ggplot(metrics_combined, aes(x = Model, y = !!sym(metric_col), fill = Class)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(title = title, x = "Model", y = metric_name) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+}
+
+# Assuming `models` is a list of trained models, `datasets` is a list of test datasets
+# and `class_column` is the name of the column with the actual classes in each test dataset
+# Example: models <- list(class_a_lr = lr_model, class_a_svm_poly = svm_poly_model, ...)
+# Example: datasets <- list(class_a = class_a_test_data, class_a_nlp = class_a_nlp_test_data, ...)
+# Note: Adjust these lists as per your actual variable names
+
+model_names <- c("class_a_lr", "class_a_svm_poly", "class_a_svm_rbf", "class_a_rf", "class_a_nn",
+                 "class_a_nlp_lr", "class_a_nlp_svm_poly", "class_a_nlp_svm_rbf", "class_a_nlp_rf", "class_a_nlp_nn",
+                 "class_b_svm_poly", "class_b_svm_rbf", "class_b_rf",
+                 "class_b_nlp_svm_poly", "class_b_nlp_svm_rbf", "class_b_nlp_rf")
+
+class_column <- "actual_class"  # Replace with your actual class column name
+
+# Calculate metrics for each model
+metrics_list <- lapply(model_names, function(model_name) {
+  dataset_name <- gsub("_.*", "", model_name)
+  model <- get(model_name)
+  test_data <- get(paste0(dataset_name, "_test_data"))
+  calculate_metrics(model, test_data, class_column)
+})
+
+# Combine class metrics for all models
+class_metrics_list <- lapply(metrics_list, function(x) x$class_metrics)
+
+# Plot Balanced Accuracy and Mean F1 score across all classes
+balanced_accuracy_plot <- plot_metrics(class_metrics_list, "Balanced_Accuracy", "Balanced Accuracy", "Balanced Accuracy Across All Models")
+f1_score_plot <- plot_metrics(class_metrics_list, "F1_Score", "Mean F1 Score", "Mean F1 Score Across All Models")
+
+# Plot Mean F1 score for 'D' class across all models
+f1_score_draw_plot <- plot_metrics(class_metrics_list, "F1_Score", "Mean F1 Score", "Mean F1 Score for 'D' Class Across All Models") +
+  facet_wrap(~ Class == "D")
+
+# Print plots
+print(balanced_accuracy_plot)
+print(f1_score_plot)
+print(f1_score_draw_plot)
+
+
+```
+
+```{r}
+#| label: Model Selection
+
+
+
+```
