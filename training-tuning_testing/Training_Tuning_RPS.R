@@ -573,6 +573,22 @@ results_class_a <- results_list
 
 saveRDS(results_class_a, "results_class_a.rds")
 
+# Save each model to a separate .rds file
+saveRDS(results_class_a$lr, "results_class_a_lr.rds")
+saveRDS(results_class_a$svm_poly$metrics, "results_class_a_svm_poly_metrics.rds")
+
+midpoint <- ceiling(length(results_class_a$svm_poly$model) / 2)
+
+# Split the list into two parts
+model_part1 <- results_class_a$svm_poly$model[1:midpoint]
+model_part2 <- results_class_a$svm_poly$model[(midpoint + 1):length(results_class_a$svm_poly$model)]
+
+
+saveRDS(model_part1, "results_class_a_svm_poly_model_part1.rds")
+saveRDS(model_part2, "results_class_a_svm_poly_model_part2.rds")
+saveRDS(results_class_a$svm_rbf, "results_class_a_svm_rbf.rds")
+saveRDS(results_class_a$rf, "results_class_a_rf.rds")
+saveRDS(results_class_a$nn, "results_class_a_nn.rds")
 
 #' 
 ## ---------------------------------------------------------------------------------------------------------------
@@ -584,6 +600,22 @@ results_class_a_nlp <- results_list
 
 saveRDS(results_class_a_nlp, "results_class_a_nlp.rds")
 
+# Save each model to a separate .rds file
+saveRDS(results_class_a_nlp$lr, "results_class_a_nlp_lr.rds")
+saveRDS(results_class_a_nlp$svm_poly$metrics, "results_class_a_nlp_svm_poly_metrics.rds")
+
+midpoint <- ceiling(length(results_class_a_nlp$svm_poly$model) / 2)
+
+# Split the list into two parts
+model_part1 <- results_class_a_nlp$svm_poly$model[1:midpoint]
+model_part2 <- results_class_a_nlp$svm_poly$model[(midpoint + 1):length(results_class_a_nlp$svm_poly$model)]
+
+
+saveRDS(model_part1, "results_class_a_nlp_svm_poly_model_part1.rds")
+saveRDS(model_part2, "results_class_a_nlp_svm_poly_model_part2.rds")
+saveRDS(results_class_a_nlp$svm_rbf, "results_class_a_nlp_svm_rbf.rds")
+saveRDS(results_class_a_nlp$rf, "results_class_a_nlp_rf.rds")
+saveRDS(results_class_a_nlp$nn, "results_class_a_nlp_nn.rds")
 
 #' 
 ## ---------------------------------------------------------------------------------------------------------------
@@ -598,6 +630,24 @@ results_class_b <- results_list
 saveRDS(results_class_b, "results_class_b.rds")
 
 
+# Save each model to a separate .rds file
+saveRDS(results_class_b$lr, "results_class_b_lr.rds")
+saveRDS(results_class_b$svm_poly$metrics, "results_class_b_svm_poly_metrics.rds")
+
+midpoint <- ceiling(length(results_class_b$svm_poly$model) / 2)
+
+# Split the list into two parts
+model_part1 <- results_class_b$svm_poly$model[1:midpoint]
+model_part2 <- results_class_b$svm_poly$model[(midpoint + 1):length(results_class_b$svm_poly$model)]
+
+
+saveRDS(model_part1, "results_class_b_svm_poly_model_part1.rds")
+saveRDS(model_part2, "results_class_b_svm_poly_model_part2.rds")
+saveRDS(results_class_b$svm_rbf, "results_class_b_svm_rbf.rds")
+saveRDS(results_class_b$rf, "results_class_b_rf.rds")
+saveRDS(results_class_b$nn, "results_class_b_nn.rds")
+
+
 #' 
 ## ---------------------------------------------------------------------------------------------------------------
 
@@ -607,5 +657,25 @@ run_analysis("../Dataset/class_b_nlp_train.csv",
                                 "class_b_nlp_images")
 
 results_class_b_nlp <- results_list
+
 saveRDS(results_class_b_nlp, "results_class_b_nlp.rds")
 
+
+# Save each model to a separate .rds file
+saveRDS(results_class_b_nlp$lr, "results_class_b_nlp_lr.rds")
+saveRDS(results_class_b_nlp$svm_poly$metrics, "results_class_b_nlp_svm_poly_metrics.rds")
+
+midpoint <- ceiling(length(results_class_b_nlp$svm_poly$model) / 2)
+
+# Split the list into two parts
+model_part1 <- results_class_b_nlp$svm_poly$model[1:midpoint]
+model_part2 <- results_class_b_nlp$svm_poly$model[(midpoint + 1):length(results_class_b_nlp$svm_poly$model)]
+
+
+saveRDS(model_part1, "results_class_b_nlp_svm_poly_model_part1.rds")
+saveRDS(model_part2, "results_class_b_nlp_svm_poly_model_part2.rds")
+saveRDS(results_class_b_nlp$svm_rbf, "results_class_b_nlp_svm_rbf.rds")
+saveRDS(results_class_b_nlp$rf, "results_class_b_nlp_rf.rds")
+saveRDS(results_class_b_nlp$nn, "results_class_b_nlp_nn.rds")
+
+  

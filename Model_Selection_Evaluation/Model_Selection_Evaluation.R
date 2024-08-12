@@ -33,15 +33,69 @@
 ## ---------------------------------------------------------------------------------------------------------------
 #| label: loading models
 
-results_class_a <- readRDS("../training-tuning_testing/results_class_a.rds")
+results_class_a <- list()
 
-results_class_a_nlp <- readRDS("../training-tuning_testing/results_class_a_nlp.rds")
+results_class_a_nlp <- list()
 
-results_class_b <- readRDS("../training-tuning_testing/results_class_b.rds")
+results_class_b <- list()
 
-results_class_b_nlp <- readRDS("../training-tuning_testing/results_class_b_nlp.rds")
+results_class_b_nlp <- list()
 
-# results_list <- readRDS("results_list_temp_before_changing_grid_testing_purpose.rds")
+# Loading models
+
+# Class A 
+results_class_a$lr <- readRDS("../training-tuning_testing/results_class_a_lr.rds")
+
+results_class_a_svm_model_part1 <- readRDS("../training-tuning_testing/results_class_a_svm_poly_model_part1.rds")
+results_class_a_svm_model_part2 <- readRDS("../training-tuning_testing/results_class_a_svm_poly_model_part2.rds")
+combined_model <- c(results_class_a_svm_model_part1, results_class_a_svm_model_part2)
+results_class_a$svm_poly$metrics <- readRDS("../training-tuning_testing/results_class_a_svm_poly_metrics.rds")
+results_class_a$svm_poly$model <- combined_model
+
+results_class_a$svm_rbf <- readRDS("../training-tuning_testing/results_class_a_svm_rbf.rds")
+results_class_a$rf <- readRDS("../training-tuning_testing/results_class_a_rf.rds")
+results_class_a$nn <- readRDS("../training-tuning_testing/results_class_a_nn.rds")
+
+
+# Class A NLP
+results_class_a_nlp$lr <- readRDS("../training-tuning_testing/results_class_a_nlp_lr.rds")
+
+results_class_a_nlp_svm_model_part1 <- readRDS("../training-tuning_testing/results_class_a_nlp_svm_poly_model_part1.rds")
+results_class_a_nlp_svm_model_part2 <- readRDS("../training-tuning_testing/results_class_a_nlp_svm_poly_model_part2.rds")
+combined_model <- c(results_class_a_nlp_svm_model_part1, results_class_a_nlp_svm_model_part2)
+results_class_a_nlp$svm_poly$metrics <- readRDS("../training-tuning_testing/results_class_a_nlp_svm_poly_metrics.rds")
+results_class_a_nlp$svm_poly$model <- combined_model
+
+results_class_a_nlp$svm_rbf <- readRDS("../training-tuning_testing/results_class_a_nlp_svm_rbf.rds")
+results_class_a_nlp$rf <- readRDS("../training-tuning_testing/results_class_a_nlp_rf.rds")
+results_class_a_nlp$nn <- readRDS("../training-tuning_testing/results_class_a_nlp_nn.rds")
+
+# Class B 
+results_class_b$lr <- readRDS("../training-tuning_testing/results_class_b_lr.rds")
+
+results_class_b_svm_model_part1 <- readRDS("../training-tuning_testing/results_class_b_svm_poly_model_part1.rds")
+results_class_b_svm_model_part2 <- readRDS("../training-tuning_testing/results_class_b_svm_poly_model_part2.rds")
+combined_model <- c(results_class_b_svm_model_part1, results_class_b_svm_model_part2)
+results_class_b$svm_poly$metrics <- readRDS("../training-tuning_testing/results_class_b_svm_poly_metrics.rds")
+results_class_b$svm_poly$model <- combined_model
+
+results_class_b$svm_rbf <- readRDS("../training-tuning_testing/results_class_b_svm_rbf.rds")
+results_class_b$rf <- readRDS("../training-tuning_testing/results_class_b_rf.rds")
+results_class_b$nn <- readRDS("../training-tuning_testing/results_class_b_nn.rds")
+
+# Class B NLP 
+results_class_b_nlp$lr <- readRDS("../training-tuning_testing/results_class_b_nlp_lr.rds")
+
+results_class_b_nlp_svm_model_part1 <- readRDS("../training-tuning_testing/results_class_b_nlp_svm_poly_model_part1.rds")
+results_class_b_nlp_svm_model_part2 <- readRDS("../training-tuning_testing/results_class_b_nlp_svm_poly_model_part2.rds")
+combined_model <- c(results_class_b_nlp_svm_model_part1, results_class_b_nlp_svm_model_part2)
+results_class_b_nlp$svm_poly$metrics <- readRDS("../training-tuning_testing/results_class_b_nlp_svm_poly_metrics.rds")
+results_class_b_nlp$svm_poly$model <- combined_model
+
+results_class_b_nlp$svm_rbf <- readRDS("../training-tuning_testing/results_class_b_nlp_svm_rbf.rds")
+results_class_b_nlp$rf <- readRDS("../training-tuning_testing/results_class_b_nlp_rf.rds")
+results_class_b_nlp$nn <- readRDS("../training-tuning_testing/results_class_b_nlp_nn.rds")
+
 
 output_dir <- "eval_images"
 
