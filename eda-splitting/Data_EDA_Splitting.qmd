@@ -30,6 +30,7 @@ library(randomForest)
 library(caret)
 library(doParallel)
 library(tidytext)
+library(grid)
 ```
 
 Now, we will do a thorough EDA of our dataset, perform feature selection using BORUTA package and finally split it into Class A (Home and Away features) and Class B (Differential features) train and test set after scaling it properly.
@@ -134,37 +135,52 @@ if (!dir.exists("eda_images")) {
 # Function to create and save Q-Q plot
 save_qq_plot <- function(data, column) {
   plot <- ggplot(data, aes(sample = .data[[column]])) +
-    stat_qq() +
-    stat_qq_line() +
+    stat_qq(color = "#1f77b4", size = 1.5) +
+    stat_qq_line(color = "red", size = 1) +
     ggtitle(paste("Q-Q Plot of", column)) +
+    labs(
+      x = "Theoretical Quantiles",
+      y = "Sample Quantiles"
+    ) +
     theme_minimal() +
     theme(
-      plot.title = element_text(size = 10),
-      axis.text.x = element_text(size = 8),
-      axis.text.y = element_text(size = 8)
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title.x = element_text(size = 12, face = "bold"),
+      axis.title.y = element_text(size = 12, face = "bold"),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10)
     )
-  pdf(file.path("eda_images", paste0("qq_plot_", column, ".pdf")))
+  
   print(plot)
-  dev.off()
+  ggsave(file.path("eda_images", paste0("qq_plot_", column, ".pdf")), plot = plot, width = 8, height = 6)
 }
 
 # Function to create and save histogram with normal curve
 save_hist_with_normal <- function(data, column) {
   plot <- ggplot(data, aes(x = .data[[column]])) +
-    geom_histogram(aes(y = ..density..), bins = 30, fill = "blue", alpha = 0.5) +
-    stat_function(fun = dnorm, args = list(mean = mean(data[[column]], na.rm = TRUE),
-                                           sd = sd(data[[column]], na.rm = TRUE)), 
-                  col = "red", size = 1) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "#1f77b4", 
+                   alpha = 0.6, color = "black") +
+    stat_function(fun = dnorm, args = list(mean = mean(data[[column]], 
+                                                       na.rm = TRUE),
+                                           sd = sd(data[[column]], 
+                                                   na.rm = TRUE)), 
+                  col = "#d62728", size = 1.5) +
     ggtitle(paste("Histogram with Normal Curve of", column)) +
+    labs(
+      x = paste(column, "Values"),
+      y = "Density"
+    ) +
     theme_minimal() +
     theme(
-      plot.title = element_text(size = 10),
-      axis.text.x = element_text(size = 8),
-      axis.text.y = element_text(size = 8)
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title.x = element_text(size = 12, face = "bold"),
+      axis.title.y = element_text(size = 12, face = "bold"),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10)
     )
-  pdf(file.path("eda_images", paste0("hist_normal_", column, ".pdf")))
+  
   print(plot)
-  dev.off()
+  ggsave(file.path("eda_images", paste0("hist_normal_", column, ".pdf")), plot = plot, width = 8, height = 6)
 }
 
 # Create and save Q-Q plots and histograms for all numerical columns
@@ -260,10 +276,18 @@ wordcloud_data <- master_dataset %>%
   count(word, sort = TRUE) %>%
   filter(!word %in% stop_words$word) # Remove stop words
 
-png(file.path("eda_images", paste0("Wordcloud", ".png")))
+# Set up file path and dimensions
+output_dir <- "eda_images"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+png(file.path(output_dir, "Wordcloud.png"), width = 800, height = 600)
+
 wordcloud(words = wordcloud_data$word, freq = wordcloud_data$n, min.freq = 10,
           max.words = 200, random.order = FALSE, rot.per = 0.35,
-          colors = brewer.pal(8, "Dark2"))
+          colors = brewer.pal(8, "Dark2"), scale = c(4, 0.5))
+
 dev.off()
 
 master_dataset <- master_dataset %>%
@@ -276,23 +300,21 @@ master_dataset <- master_dataset %>%
 
 master_dataset$FTR_label <- as.factor(master_dataset$FTR_label)
 
-pdf(file.path("eda_images", paste0("Home_sentiment", ".pdf")))
 # Plot using the new column
 ggplot(master_dataset, aes(x = factor(FTR_label), y = Home_Score, fill = FTR_label)) +
   geom_boxplot() +
   labs(title = "Home Sentiment Scores by Result", x = "Result", y = "Home Sentiment Score") +
   scale_fill_discrete(name = "Result") +
   theme_minimal()
-dev.off()
+ggsave(file.path("eda_images", paste0("Home_sentiment", ".pdf")))
 
 
-pdf(file.path("eda_images", paste0("Away_sentiment", ".pdf")))
 ggplot(master_dataset, aes(x = factor(FTR_label), y = Away_Score, fill = FTR_label)) +
   geom_boxplot() +
   labs(title = "Away Sentiment Scores by Result", x = "Result", y = "Away Sentiment Score") +
   scale_fill_discrete(name = "Result") +
   theme_minimal()
-dev.off()
+ggsave(file.path("eda_images", paste0("Away_sentiment", ".pdf")))
 
 
 png(file.path("eda_images", paste0("Home v Away sentiment", ".png")))
@@ -305,10 +327,9 @@ plot_ly(master_dataset, x = ~Home_Score, y = ~Away_Score, type = 'scatter', mode
 dev.off()
 
 # Save the pair plot to a PDF
-pdf(file.path("eda_images", paste0("Pairs", ".pdf")))
 pairs(master_dataset %>% select(Home_Score, Away_Score, HGKPP, AGKPP, HCKPP, ACKPP, HSTKPP, ASTKPP),
       main = "Pair Plot of Selected Numeric Variables")
-dev.off()
+ggsave(file.path("eda_images", paste0("Pairs", ".pdf")))
 
 
 ```
@@ -346,21 +367,34 @@ highly_correlated_matrix <- correlation_matrix[highly_correlated, highly_correla
 # Convert correlation matrix to a long format for ggplot
 cor_melt <- melt(highly_correlated_matrix, na.rm = TRUE)
 
+# Set up file path and dimensions
+output_dir <- "eda_images"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
 # Heatmap of highly correlated variables (|r| > 0.8)
-pdf(file.path("eda_images", "Highly_Correlated_Variables_Heatmap.pdf"))
-ggplot(data = cor_melt, aes(Var1, Var2, fill = value)) +
+heatmap_plot <- ggplot(data = cor_melt, aes(Var1, Var2, fill = value)) +
   geom_tile(color = "white") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 2) +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
                        midpoint = 0, limit = c(-1, 1), space = "Lab", 
                        name = "Correlation") +
   theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 12, hjust = 1)) +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1, color = "black"),
+    axis.text.y = element_text(size = 12, color = "black"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
   coord_fixed() +
   ggtitle("Heatmap of Highly Correlated Variables (|r| > 0.8)")
-dev.off()
 
+print(heatmap_plot)
+ggsave(file.path(output_dir, "Highly_Correlated_Variables_Heatmap.pdf"), plot = heatmap_plot, width = 10, height = 8)
 
 ```
 
@@ -382,6 +416,7 @@ data <- master_dataset |> select(-c(3:5,8))
 cl <- makeCluster(detectCores() - 2)  # keep 2 cores free
 registerDoParallel(cl)
 
+set.seed(23200527)
 # Step 5: Set training parameters
 train_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 5,
                            summaryFunction = multiClassSummary, classProbs = TRUE,
@@ -394,7 +429,7 @@ grid <- expand.grid(mtry = 2:(ncol(data)-1))
 # Step 7: Run tuning procedure
 out <- vector("list", length(ntree_set))
 for (j in 1:length(ntree_set)) {
-  set.seed(3344)
+  set.seed(23200527)
   out[[j]] <- train(FTR ~ ., data = data, method = "rf", metric = "Accuracy",
                     trControl = train_ctrl, tuneGrid = grid, ntree = ntree_set[j],
                     na.action = na.pass)
@@ -414,7 +449,7 @@ print(paste("Optimal mtry: ", best_mtry))
 print(paste("Optimal ntree: ", best_ntree))
 
 # Step 9: Perform Boruta feature selection with optimal hyperparameters
-set.seed(3344)
+set.seed(23200527)
 boruta_output <- Boruta(FTR ~ ., data = data, doTrace = 2, 
                         ntree = best_ntree, mtry = best_mtry)
 print(boruta_output)
@@ -427,30 +462,57 @@ print(boruta_final)
 selected_features <- getSelectedAttributes(boruta_final, withTentative = FALSE)
 print(selected_features)
 
-# Step 10: Generate and save plots
-# Plot Boruta variable importance
-pdf(file.path("eda_images", "Boruta_Importance_Plot.pdf"))
-plot(boruta_final, xlab = "", xaxt = "n")
+# Add custom axis
 lz <- lapply(1:ncol(boruta_final$ImpHistory), function(i)
-  boruta_final$ImpHistory[is.finite(boruta_final$ImpHistory[,i]),i])
+  boruta_final$ImpHistory[is.finite(boruta_final$ImpHistory[,i]), i])
 names(lz) <- colnames(boruta_final$ImpHistory)
 Labels <- sort(sapply(lz, median))
-axis(side = 1, las = 2, labels = names(Labels), at = 1:ncol(boruta_final$ImpHistory), cex.axis = 0.7)
+
+# Highlight and draw a box around specific features in the Boruta plot
+highlight_features <- c("shadowMin", "shadowMax")
+highlight_indices <- which(names(Labels) %in% highlight_features)
+
+# Create Boruta plot
+pdf(file.path("eda_images", paste0("Boruta_Importance_Plot_Highlighted.pdf")))
+plot(boruta_final, xlab = "", xaxt = "n")
+
+axis(side = 1, las = 2, labels = names(Labels), 
+     at = 1:ncol(boruta_final$ImpHistory), cex.axis = 0.7)
+title("Boruta Importance Plot")
+
+
+
+# Highlight specific features
+abline(v = highlight_indices, col = "red", lty = 2)
+
+# Draw a box around the features between shadowMin and shadowMax
+rect(min(highlight_indices) - 0.5, par("usr")[3], 
+     max(highlight_indices) + 0.5, par("usr")[4], border = "blue", lwd = 2)
+
+# Add text inside the box
+midpoint <- mean(highlight_indices)
+text(midpoint, par("usr")[4] - 2, "UNIMPORTANT ATTRIBUTES", col = "blue", 
+     cex = 0.48, font = 2)
+
 dev.off()
+
+
 
 # Plot selected features
 selected_data <- data[, c(selected_features, "FTR")]
-importance <- randomForest(FTR ~ ., data = selected_data, ntree = best_ntree, mtry = best_mtry)$importance
-importance_df <- data.frame(Feature = rownames(importance), Importance = importance[,1])
-importance_plot <- ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+importance <- randomForest(FTR ~ ., data = selected_data, 
+                           ntree = best_ntree, mtry = best_mtry)$importance
+importance_df <- data.frame(Feature = rownames(importance), 
+                            Importance = importance[,1])
+importance_plot <- ggplot(importance_df, aes(x = reorder(Feature, Importance),
+                                             y = Importance)) +
   geom_bar(stat = "identity") +
   coord_flip() +
   xlab("Features") +
   ylab("Importance") +
   ggtitle("Feature Importance")
-pdf(file.path("eda_images", "Importance_Plot.pdf"))
 importance_plot
-dev.off()
+ggsave(file.path("eda_images", "Importance_Plot.pdf"))
 ```
 
 From BORUTA's output, it became clear that the following 5 features are unimportant:-
