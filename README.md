@@ -47,11 +47,14 @@ The objective of this project is to develop a model capable of accurately predic
 3. Install the required packages :
    ```
    # Vector of required packages
-    packages <- c("knitr","rvest","dplyr","stringr","lubridate","tidyr","furrr", "ggplot2", 
-                  "data.table","readr", "purrr","rstudioapi","zoo","tidyverse","tidytext","syuzhet",
-                  "sentimentr","lexicon","textdata","caret","wordcloud","RColorBrewer","plotly","GGally","gridExtra",
-                  "nortest","ggpubr","reshape2","car","Boruta","randomForest","doParallel","grid","e1071","keras","tfruns",
-                  "pROC","MASS","ROCR","tensorflow","caret","kableExtra","multiROC","BBmisc") 
+    packages <- c("knitr","rvest","dplyr","stringr","lubridate","tidyr","furrr",
+                  "ggplot2", "data.table","readr", "purrr","rstudioapi","zoo",
+                  "tidyverse","tidytext","syuzhet","sentimentr","lexicon",
+                  "textdata","caret","wordcloud","RColorBrewer","plotly",
+                  "GGally","gridExtra","nortest","ggpubr","reshape2","car",
+                  "Boruta","randomForest","doParallel","grid","e1071","keras",
+                  "tfruns","pROC","MASS","ROCR","tensorflow","caret","kableExtra",
+                  "multiROC","BBmisc") 
 
     # Function to check if a package is installed, and install it if not
     install_if_missing <- function(packages) {
