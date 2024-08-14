@@ -203,6 +203,21 @@ We finally merged the contents together and cam up with $${\color{green}Master \
 
 #### Feature Engineering
 
+We have a baseline dataset available , containing information like Goals scored and conceded, Corners, Xg, Shots on Target and Result. However, previous works in this field and our own domain knowledge suggest that the outcome of any sport match is highly unpredictable and various physical, psychological and geographical factors affect the outcome of any match. Therefore, we will engineer most of our features in order to capture as much information as we could to predict the result
+
+Base Features ,namely - FTHG (Full time Home Team Goals), FTAG (Full time Away Team Goals), HST (Home Team Shots on Target) , AST (Away Team Shots on Target), HC (Home Team Corners) and AC (Away team Corners) are used to engineer the features. Feature engineering was done maily beacuse :-
+- To predict a football match, we need to have features available before hand. Therefore, features were engineered so that they depend only on a team's previous matches' statistics.
+- Based on Domain knowledge, it was clear that one of the main factors affecting a football match's result is the teams' form. Hence, features were engineered to incorporate this variable.
+
+Wherever applicable, features were engineered so that they depend only on a team's past 5 matches. The number 5 is static and is one of the areas of further research, to make this number dynamic and select it using cross-validation. The process of feature engineering is repeated freash for each season, so that the previous season has no bearing on the current season. Since, we are finding features based on a team's performance in the previous 5 matches, no values were assigned to features of a team for the first 5 matches. The first 5 matches of each team were thus removed from analysis. Since Home and Away match is a simple but an extremely important criterion, all these features were computed for both the home and away team for every match. A full list of features engineered along with the equations used is given below :-
+
+1. HGKPP , AGKPP - Home and Away teams' past 5 matches Goals.
+2. HSTKPP , ASTKPP - Home and Away teams' past 5 matches Shots on Targets.
+3. HCKPP , ACKPP - Home and Away teams' past 5 matches Corners.
+
+<p align="center">
+$\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$ , where $\mu^{i} \in \{\text{Corners, Shots on Target, Goals}\}$
+</p>
 
 ---
 
