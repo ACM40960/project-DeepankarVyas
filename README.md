@@ -18,6 +18,7 @@ This projects aims to use Machine Learning models to predict the outcome of Foot
 - [Methodology](#methodology)
   - [Dataset Preparation](#dataset-preparation)
   - [Feature Engineering](#feature-engineering)
+  - [Sentiment Analysis and Data Cleanup](#sentiment-analysis-and-data-cleanup)
   - [EDA and Feature Selection](#eda-and-feature-selection)
   - [Model Training and Tuning](#model-training-and-tuning)
   - [Model Evaluation](#model-evaluation)
@@ -197,27 +198,60 @@ Next , Web - Scraping was done to extract pre- match reports from **WhoScored.co
 
 We finally merged the contents together and cam up with $${\color{green}Master \space \color{green}Dataset}$$. Some issues ecountered during this process :-
 - Team names - Custom mapping had to be done to maintain uniformity in teams' naming.
-- Run time - The enire web scraping process took more than $${\color{red}2 \space \color{red}days}$$ to complete on a machine with standard specifications. it is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, datasets have already been created and could be used directly for running the forthcoming. The dataset prepared after web scraping and feature engineering ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
+- Run time - The enire web scraping process took more than $${\color{red}2 \space \color{red}days}$$ to complete on a machine with standard specifications. it is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, datasets have already been created and could be used directly for running the forthcoming. The dataset prepared after web scraping , feature engineering ( discussed in length below) and sentiment analysis ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
 
 ----
 
 #### Feature Engineering
 
-We have a baseline dataset available , containing information like Goals scored and conceded, Corners, Xg, Shots on Target and Result. However, previous works in this field and our own domain knowledge suggest that the outcome of any sport match is highly unpredictable and various physical, psychological and geographical factors affect the outcome of any match. Therefore, we will engineer most of our features in order to capture as much information as we could to predict the result
+We have a baseline dataset available , containing information like Goals scored and conceded, Corners, Xg, Shots on Target and Result. However, previous works in this field and our own domain knowledge suggest that the outcome of any sport match is highly unpredictable and various physical, psychological and geographical factors affect the outcome of any match. Therefore, we will engineer most of our features in order to capture as much information as we could to predict the result.
 
 Base Features ,namely - FTHG (Full time Home Team Goals), FTAG (Full time Away Team Goals), HST (Home Team Shots on Target) , AST (Away Team Shots on Target), HC (Home Team Corners) and AC (Away team Corners) are used to engineer the features. Feature engineering was done maily beacuse :-
 - To predict a football match, we need to have features available before hand. Therefore, features were engineered so that they depend only on a team's previous matches' statistics.
 - Based on Domain knowledge, it was clear that one of the main factors affecting a football match's result is the teams' form. Hence, features were engineered to incorporate this variable.
 
-Wherever applicable, features were engineered so that they depend only on a team's past 5 matches. The number 5 is static and is one of the areas of further research, to make this number dynamic and select it using cross-validation. The process of feature engineering is repeated freash for each season, so that the previous season has no bearing on the current season. Since, we are finding features based on a team's performance in the previous 5 matches, no values were assigned to features of a team for the first 5 matches. The first 5 matches of each team were thus removed from analysis. Since Home and Away match is a simple but an extremely important criterion, all these features were computed for both the home and away team for every match. A full list of features engineered along with the equations used is given below :-
+Wherever applicable, features were engineered so that they depend only on a team's past 5 matches. The number 5 is static and is one of the areas of further research, to make this number dynamic and select it using cross-validation. The process of feature engineering is repeated freash for each season, so that the previous season has no bearing on the current season. Since, we are finding features based on a team's performance in the previous 5 matches, no values were assigned to features of a team for the first 5 matches. The first 5 matches of each team were thus removed from analysis. Since Home and Away match is a simple but an extremely important criterion, all these features were computed for both the home and away team for every match. A full list of features engineered along with the equations used is given below [1,3] :-
 
-1. HGKPP , AGKPP - Home and Away teams' past 5 matches Goals.
-2. HSTKPP , ASTKPP - Home and Away teams' past 5 matches Shots on Targets.
-3. HCKPP , ACKPP - Home and Away teams' past 5 matches Corners.
+1. **HGKPP , AGKPP** - Home and Away teams' past 5 matches Goals.
+2. **HSTKPP , ASTKPP** - Home and Away teams' past 5 matches Shots on Targets.
+3. **HCKPP , ACKPP** - Home and Away teams' past 5 matches Corners.
 
 <p align="center">
 $\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$ , where $\mu^{i} \in \{\text{Corners, Shots on Target, Goals}\}$
 </p>
 
----
+4. **HSt , ASt, HStWeighted, AStWeighted** - Home and Away teams' Streak and Weighted Streak of the past 5 matches. This feature encapsulates the recent improving/declining trend in the performance of a team. The Streak value for a team is computed by assigning a score to each match result and taking the mean of the previous 5 scores. We also included a temporal dimension to the Streak feature by placing time- dependent weights on the scores of the previous games of a team, obtaining a feature that we refer to as the Weighted Streak (greater weights for recent games, decreasing grad- ually for non-recent games). In the Weighted Streak feature, the weighting scheme is as follows:
+- a weight of 1 on the oldest observation (j − k)
+- a weight of 5 on the most recent observation (j−1).
 
+<p align="center">
+$\text{Streak}(\delta_j) = \left( \sum_{p=j-k}^{j-1} \text{resp}_p \right) / 3k$ <br><br>
+$\text{Weighted\_Streak}(\omega_j) = \sum_{p=j-k}^{j-1} \frac{2(p - (j - k - 1) \text{resp}_p)}{3k(k + 1)}$ , where $\text{resp}_p \in \{0, 1, 3\}$
+</p>
+
+5. **HForm , AForm** - Home and Away teams' Form. Much like Streak, it is a measure of team's form but it encompasses a team’s performances in individual matches much more intricately. The form values are updated after every match and take into account the quality of the opposition faced, underlining the importance of both time factor and difficulty of the match. Mathematical formulation of Form ensures that a greater coefficient update is provided if a weak team triumphs over a strong team, and vice-versa. In the case of a draw, the Form of a weak team increases while that of a strong team decreases.
+
+<p align="center">
+When team `A` beats team `B` :<br><br>
+$F_{j}^{A} = F_{(j-1)}^{A} + \gamma F_{(j-1)}^{B}$<br><br>
+$F_{j}^{B} = F_{(j-1)}^{B} - \gamma F_{(j-1)}^{B}$<br><br>
+​In case of a draw:<br><br>
+$F_{j}^{A} = F_{(j-1)}^{A} - \gamma (F_{(j-1)}^{A} - F_{(j-1)}^{B})$<br><br>
+$F_{j}^{B} = F_{(j-1)}^{B} - \gamma (F_{(j-1)}^{B} - F_{(j-1)}^{A})$<br><br>
+where $\gamma$ is the stealing fraction and is within the range (0,1), with the optimal value being 0.33 .
+</p>
+
+6. **HTGD , ATGD** - Home and Away teams' past 5 matches Goal Difference. The Goal Difference (GD) is crucial in football predictive models. It is calculated as the difference between the cumulative goals scored and goals conceded by a team up to a specific match.
+
+<p align="center">
+$GD_k = \sum_{j=1}^{k-1} \text{GS}_j - \sum_{j=1}^{k-1} \text{GC}_j$​<br><br>
+where $\text{GS} = \text{Goals Scored}, \text{GC} = \text{Goals Conceded}$ .
+</p>
+
+7. Other than the engineered features, we also considered the **Team Ratings** of each team's **Attack, Midfield, Defense and also Overall Ratin**g, which were web scraped in the previous section.
+8. The **Day of the Week** when the match was played and the **Season** were included as Psychological factors[7].
+
+The dataset prepared after web scraping , feature engineering and sentiment analysis ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
+
+---
+#### Sentiment Analysis and Data Cleanup
