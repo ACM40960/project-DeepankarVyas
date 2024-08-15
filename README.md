@@ -197,7 +197,7 @@ Next , Web - Scraping was done to extract pre- match reports from **WhoScored.co
 
 We finally merged the contents together and cam up with $${\color{green}Master \space \color{green}Dataset}$$. Some issues ecountered during this process :-
 - Team names - Custom mapping had to be done to maintain uniformity in teams' naming.
-- Run time - The enire web scraping process took more than $${\color{red}2 \space \color{red}days}$$ to complete on a machine with standard specifications. it is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, datasets have already been created and could be used directly for running the forthcoming. The dataset prepared after web scraping , feature engineering ( discussed in length below) and sentiment analysis ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
+- Run time - The enire web scraping process took more than $${\color{red}5 \space \color{red}days}$$ to complete on a machine with standard specifications. it is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, datasets have already been created and could be used directly for running the forthcoming. The dataset prepared after web scraping , feature engineering ( discussed in length below) and sentiment analysis ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
 
 ----
 
