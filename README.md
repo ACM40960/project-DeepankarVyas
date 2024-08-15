@@ -98,7 +98,6 @@ The code in both the files is exactly the same, with .R files updated with the l
 │   │   ├── D1_2122.csv                        # Match data for the 2021-2022 Bundesliga season.
 │   │   ├── D1_2223.csv                        # Match data for the 2022-2023 Bundesliga season.
 │   │   └── D1_2324.csv                        # Match data for the 2023-2024 Bundesliga season.
-│   ├── dataset_preparation.qmd                # Quarto document for preparing dataset for analysis.
 │   └── dataset_preparation.R                  # R script used for preparing dataset for analysis.
 ├── feature-engineering/
 │   ├── feature-engineering.qmd                # Quarto document for performing feature engineering on datasets.
