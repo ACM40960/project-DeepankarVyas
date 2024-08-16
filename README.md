@@ -395,3 +395,16 @@ A detailed description of all the datasets used can be found here - [Datasets](h
 
 ---
 #### Model Training and Tuning
+
+Once we have the datatset ready and EDA done, we are ready to train and tune our models. The 4 dataset have already been divided into train and test sets, and train set will be used for training and validation purpose. For each dataset , 5 models will be trained :-
+
+- Logistic Regression
+- SVM with Polynomial kernel
+- SVM with RBF Kernel
+- Random Forest
+- Nueral Networks
+
+Further details about the byperparameters tuned for each model and the metric used for selecting the optimal hyperparameters can be found here [Model Training and Tuning](https://github.com/ACM40960/project-DeepankarVyas/tree/main/training-tuning_testing)
+
+---
+#### 
