@@ -31,6 +31,32 @@ library(caret)
 ## ---------------------------------------------------------------------------------------------------------------
 #| label: Function to calculate metrics
 
+
+
+
+
+
+
+
+
+
+######################################################################################################
+
+## ATTENTION :- The model training process will take 192+ hours to complete. If No is selected, 
+# user can directly proceed to the next .R file - 'Model_Selection_Evaluation.R', which
+# uses the pre-stored training results, stored at the time of model development and training.
+
+######################################################################################################
+
+
+
+
+
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+
+
 # Function to calculate metrics for each class and return them
 calculate_metrics <- function(y_true, y_pred) {
   
@@ -678,4 +704,3 @@ saveRDS(results_class_b_nlp$svm_rbf, "results_class_b_nlp_svm_rbf.rds")
 saveRDS(results_class_b_nlp$rf, "results_class_b_nlp_rf.rds")
 saveRDS(results_class_b_nlp$nn, "results_class_b_nlp_nn.rds")
 
-  
