@@ -21,8 +21,7 @@ This projects aims to use Machine Learning models to predict the outcome of Foot
   - [Sentiment Analysis and Data Cleanup](#sentiment-analysis-and-data-cleanup)
   - [EDA and Feature Selection](#eda-and-feature-selection)
   - [Model Training and Tuning](#model-training-and-tuning)
-  - [Model Evaluation](#model-evaluation)
-  - [Generalized Predictive Performance](#generalized-predictive-performance)
+  - [Model Evaluation and Generalized Predictive Performance](#model-evaluation-and-generalized-predictive-performance)
   - [Comparison Against Benchmark Setting](#comparison-against-benchmark-setting)
   - [Forthcoming Research](#forthcoming-research)
 - [Poster](https://github.com/ACM40960/project-DeepankarVyas/blob/main/Final%20Project%20Poster.pdf) <em> <- Click Here </em>
@@ -407,5 +406,46 @@ Once we have the datatset ready and EDA done, we are ready to train and tune our
 Further details about the byperparameters tuned for each model and the metric used for selecting the optimal hyperparameters can be found here [Model Training and Tuning](https://github.com/ACM40960/project-DeepankarVyas/tree/main/training-tuning_testing)
 
 ---
-#### Model Evaluation
+#### Model Evaluation and Generalized Predictive Performance 
+Once the models have been trained and stored along with their performance metrics in `.rds` files, we will use these results to determine the best performing model. Since **Draw** was the hardest , the model which predicted **Draw** was given slightly more importance . Along with Mean F1 and F1 of Draw class (which was the hardest class to predict), we used RPS too to finalize the model which performed the best. 
+
+
+<div style="background-color: white; display: inline-block; padding: 10px;">
+    <img width="734" alt="Model Comparison" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/Plot_mean_f1_draw_page-0001%20(1)%20(2).jpg">
+   <p style="text-align: center;"><em>Figure 5: Model Comparison using F1 Score and RPS.</em></p> 
+</div>
+
+The best model selection, however,  was done based on a huerestic involving **Mean F1 Score and RPS **. The algorithm for the heurestic is as follows :-
+
+```
+1. Arrange the dataset based on F1 Score of the Draw class of the models.
+2. Decide a range of threshold values
+3. Subtract threshold values from the highest F1_Score_Draw among the models .
+4. Optimal threshold value is the max value which accounts for between 2 to 5 models, , not going below 0.05.
+5. Subtract optimal threshold value from the highest F1_Score_Draw and call it Threshold_F1_Draw.
+5. Filter the models having F1_Score_Draw > Threshold_F1_Draw.
+6. Rank the filtered datasets based on RPS value.
+```
+
+<div style="background-color: white; display: inline-block; padding: 10px;">
+    <img width="734" alt="Model within Thresholds" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/Models_Thresholds_page-0001.jpg">
+   <p style="text-align: center;"><em>Figure 6: Threshold values to determine optimal model selection.</em></p> 
+</div>
+
+Based on this, for our project, the best performing model was `Random Forest` trained on the dataset `Class B NLP` (differential features with sentiment scores).
+
+<div style="background-color: white; display: inline-block; padding: 10px;">
+    <img width="734" alt="Final Ranking Dataset" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/final_ranking_dataset_page-0001.jpg">
+   <p style="text-align: center;"><em>Figure 7: Final Ranking Dataset.</em></p> 
+</div>
+
+The selected model (Random Forest) was used to predict the unseen data (the test set of Class B NLP) , and gave the following results, with an **RPS of 0.2155** and an overall **Balanced Accuracy of around 57%**.
+
+<div style="background-color: white; display: inline-block; padding: 10px;">
+    <img width="734" alt="Generalized Predictive Performance" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/Screenshot%202024-08-10%20at%2020.41.35.png">
+   <p style="text-align: center;"><em>Figure 8: Generalized Predictive Performance.</em></p> 
+</div>
+
+---
+#### Comparison Against Benchmark Setting
 
