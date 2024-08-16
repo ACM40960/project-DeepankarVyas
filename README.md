@@ -382,10 +382,10 @@ The figure below shows the output of `Boruta` algorithm and heatmap of `Correlat
 
 As shown in Figure 4 depicting the Correlation Matrix and Boruta Feature Selection, it became clear that the variables are highly correlated to their differential features and features such as - Day_Of_Week, Season are not important. These features were removed and based on the analysis done above , it was decided to divide our dataset into 4 different datasets :-
 
-(a) Class A :- Home and Away features of the teams
-(b) Class A NLP :- Home and Away features of the teams with Sentiment Scores
-(c) Class B :- Differential features of the teams
-(d) Class B NLP :- Differential features of the teams with Sentiment Scores
+- Class A :- Home and Away features of the teams
+- Class A NLP :- Home and Away features of the teams with Sentiment Scores
+- Class B :- Differential features of the teams
+- Class B NLP :- Differential features of the teams with Sentiment Scores
 
 The code to perform **EDA and Feature Selection** can be found here - [EDA and Feature Selection](https://github.com/ACM40960/project-DeepankarVyas/tree/main/eda-splitting). This directory contains both the .R and .qmd files, and  either can be run to generate the desired analysis. The file reads from $${\color{green}Master \space \color{green}Dataset}$$ and creates separate train and test datasets for all the 4 datasets discussed above (80%- training and 20%- testing). 
 
