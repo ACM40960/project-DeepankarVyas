@@ -75,12 +75,12 @@ To set up the project in your local machine :-
 
 ### Directory Structure
 
-The entire code base is divided into directories, with each directoriy's content pertaining to a specific task of the project. Eah directory has these 2 files, along with its specific contents :-
+The entire code base is divided into directories, with each directory's content pertaining to a specific task of the project. Most of the directories has these 2 files while some have only .R file, along with its specific contents :-
 
 1. *.R file - **R** script containg the code carrying out a specific task of the project
 2. *.qmd file - **qmd** file containg the code carrying out a specific task of the project.
 
-The code in both the files is exactly the same, with .R files updated with the latest comments. However, any of the files can be run in the RStudio to fetch the desired results.
+The code in both the files is exactly the same, although .R files have been updated with the latest comments. However, any of the files can be run in the RStudio to fetch the desired results.
 
 ```
 ├── dataset-preparation/
