@@ -149,6 +149,7 @@ The code in both the files is exactly the same, although .R files have been upda
 │   ├── Training_Tuning_RPS.qmd                # Quarto document detailing the training and tuning process for models.
 │   └── Training_Tuning_RPS.R                  # R script for executing model training and tuning processes.
 │   ├── README.md                              # README file with a detailed description of the section
+│   ├── README images                          # Images used for the README file
 ├── model-selection-evaluation/
 │   ├── eval_images/                           # Directory containing evaluation visualizations and plots (contents not shown).
 │   ├── Model_Selection_Evaluation.qmd         # Quarto document for model selection and evaluation.
