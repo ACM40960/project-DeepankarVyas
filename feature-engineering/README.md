@@ -10,7 +10,7 @@ A detailed list of the features engineered, along with the equations used , is d
 $\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$ , where $\mu^{i} \in \{\text{Corners, Shots on Target, Goals}\}$
 </p>
 
-4. **HSt , ASt, HStWeighted, AStWeighted** - Home and Away teams' Streak and Weighted Streak of the past 5 matches. This feature encapsulates the recent improving/declining trend in the performance of a team. The Streak value for a team is computed by assigning a score to each match result and taking the mean of the previous 5 scores. We also included a temporal dimension to the Streak feature by placing time- dependent weights on the scores of the previous games of a team, obtaining a feature that we refer to as the Weighted Streak (greater weights for recent games, decreasing grad- ually for non-recent games). In the Weighted Streak feature, the weighting scheme is as follows:
+4. **HSt , ASt, HStWeighted, AStWeighted** - Home and Away teams' Streak and Weighted Streak of the past 5 matches. This feature encapsulates the recent improving/declining trend in the performance of a team. The Streak value for a team is computed by assigning a score to each match result and taking the mean of the previous 5 scores. We also included a temporal dimension to the Streak feature by placing time- dependent weights on the scores of the previous games of a team, obtaining a feature that we refer to as the Weighted Streak (greater weights for recent games, decreasing gradually for non-recent games). In the Weighted Streak feature, the weighting scheme is as follows:
 - a weight of 1 on the oldest observation (j − k)
 - a weight of 5 on the most recent observation (j−1).
 
