@@ -352,6 +352,8 @@ The code to perform **EDA and Feature Selection** can be found here - [EDA and F
 
 A detailed description of all the datasets used can be found here - [Datasets](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
 
+**NOTE** :- The BORUTA selection procedure could take more than $${\color{red}1 \space \color{red}day}$$ to complete on a machine with standard specifications
+
 ---
 #### Model Training and Tuning
 
