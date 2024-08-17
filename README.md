@@ -226,10 +226,10 @@ All the work in the field of Sports Analytics/ Predictions have been done either
    <p style="text-align: center;"><em>Figure 1: Wordlcoud generated through Sentiment Analysis.</em></p> 
 </div>
 
-However, this process was riddled with issues. Sentiment Analysis of a pre-match report is quite different from then Sentiment Analysis of, say, a novel or even a tweet related to the match . Discussed below are the issues and the proposed solutions for the same :-
+However, this process was riddled with issues. Sentiment Analysis of a pre-match report is quite different from the Sentiment Analysis of, say, a novel or even a tweet related to the match . Discussed below are the issues and the proposed solutions for the same :-
 
 1. Two subjects, instead of the usual one - One of the main issues encountered during sentiment analysis of a pre-match report is that the report pertains to two teams, not just one team. Therefore, the sentiments could range from extremely positive, to extremely negative , and could be related to different teams. Therefore, it was quite necessary to associate each sentence to one of the teams, for which it was used, and then perform sentiment analysis for each team, using each team's sentences.
-2. Varied names for a team - While writing pre - match reports, full name of the team is rarley used. Author often resorts to using short names or even nicknames of the teams. Therefore, it was necessary to have a standardize naming of the theams, or map each name used to a standard name in order to achieve the point discussed above.
+2. Varied names for a team - While writing pre - match reports, full name of the team is rarley used. Author often resorts to using short names or even nicknames of the teams. Therefore, it was necessary to have a standardize naming of the teams, or map each name used to a standard name in order to achieve the point discussed above.
 3. Custom Lexicon - Lexicon used by the package is of the English vocabulary. Hoever, sports vocabulary could turn out to be quite different from the one used in a general sense. For eg:- "Attack" in general sense conveys negative emotion. But in footballing terms, it could convey positive emotions , suggesting the attacking mindset of the teams. Therefore, in addition to the lexicon used, custom lexicon was designed which was more focused on the terminology used in football and the associated sentiment score.
 
 The code for the Sentiment Analysis could be found here - [Sentiment Analysis](https://github.com/ACM40960/project-DeepankarVyas/tree/main/data-cleanup-nlp). This directory contains both the .R and .qmd files, and  either can be run to generate the sentiment scores . Major functionalities implemented in this file , covering the points above :-
@@ -298,7 +298,7 @@ associate_sentences_with_teams <- function(text, home_team, away_team,
 
 ```
 
-This is a sample list used to standardize team names . The pre - match reposrt is checked to see if it contains any of th two team names between whom match is going to be played from the above names. If it does, that particular sentence gets associated with that team. All other team names in the report, if they occur, are ignored. Once the sentence-team mapping is acheived, `sentiment_by()` function of `sentimentr` package is used to calculate the sentiment scores, for both the teams.
+This is a sample list used to standardize team names . The pre - match reposrt is checked to see if it contains any of the two team names between whom match is going to be played from the above names. If it does, that particular sentence gets associated with that team. All other team names in the report, if they occur, are ignored. Once the sentence-team mapping is acheived, `sentiment_by()` function of `sentimentr` package is used to calculate the sentiment scores, for both the teams.
 
 ```
 # Function to calculate sentence-level sentiment scores
