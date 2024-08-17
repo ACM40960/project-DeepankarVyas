@@ -92,7 +92,7 @@ The hyperparameters tuned for SVM RBF Kernel are :- C (Cost - trade-off between 
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="SVM RBF" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/SVM_RBF_Heatmap_page-0001%20(1).jpg">
-   <p style="text-align: center;"><em>Figure 1: Heatmap of SVM RBF kernel.</em></p> 
+   <p style="text-align: center;"><em>Figure 2: Heatmap of SVM RBF kernel.</em></p> 
 </div>
 
 4. Random Forest - Random Forest is an ensemble learning method that builds multiple decision trees during training and merges their outputs to improve accuracy and control overfitting. Each tree in the forest is trained on a random subset of the data, with features also randomly selected at each split point, ensuring diversity among the trees. The final prediction is made by taking a majority vote (in classification) from all the individual trees.
@@ -101,18 +101,18 @@ The parameters tuned for Random forest are - mtry (number of features used at sp
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="Random Forest" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/RF_Heatmap_page-0001%20(1).jpg">
-   <p style="text-align: center;"><em>Figure 1: Heatmap of Random Forest.</em></p> 
+   <p style="text-align: center;"><em>Figure 3: Heatmap of Random Forest.</em></p> 
 </div>
 
-5. Neural networks - neural networks are the deep learning implementation of Machine Learning. They mimic the neurological functioning of the human brain. The structure of the neural networks used in our model is as follows :-
+5. Neural Networks - Neural Networks are the deep learning implementation of Machine Learning. They mimic the neurological functioning of the human brain. The structure of the Neural Networks used in our model is as follows :-
 
 3 layers with 128, 64 and 32 units respectively. 100 epochs with a batch size of 32 and early stopping criterion. Dropout rate and L2 regularization were also used which were tuned. Learning rate was tuned implicitly using Adam optimizer. The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below for datasets Class A, Class A NLP, Class B NLP, Class B in clockwise order. The optimal hyperparameter combination is the one with the lowest RPS value
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="Random Forest" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/NN_Heatmap_page-0001%20(2).jpg">
-   <p style="text-align: center;"><em>Figure 1: Heatmap of Neural Networks.</em></p> 
+   <p style="text-align: center;"><em>Figure 4: Heatmap of Neural Networks.</em></p> 
 </div>
 
 This directory contains both .R and .qmd files, and either can be run to train the models. There are 4 subdirectories with nomenclature - **[dataset_name]_images**, which contains the visualizations generated during model training for each dataset. 
 
-The enire model training process took more than $${\color{red}8 \space \color{red}days}$$ to complete on a machine with standard specifications . It is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, user can bypass the model training process and use the results stored to proceed to the next step - MODEL EVALUATION. The results of model training have been stored in `.rds` files at the time of model development and testing. This directory contains various `.rds` files with the nomenclature - **results_[dataset_name]_[model_name].rds**, since the standalone files for each dataset were more than 100mb in size and could not be pushed. These `.rds` files contain both the final model trained and the performance metrics evaluated for each model of each dataset.  The `.rds` file of SVM Polynomila kernel is subdivided into models and metrics file as a single was still excedding the size limit. The logic of combining the files and using the results has been implemented in the .R/.qmd file of MODEL EVALUATION section.
+The enire model training process took more than $${\color{red}8 \space \color{red}days}$$ to complete on a machine with standard specifications . It is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, user can bypass the model training process and use the results stored to proceed to the next step - MODEL EVALUATION. The results of model training have been stored in `.rds` files at the time of model development and testing. This directory contains various `.rds` files with the nomenclature - **results_[dataset_name]_[model_name].rds**, since the standalone files for each dataset were more than 100mb in size and could not be pushed to GitHub. These `.rds` files contain both the final model trained and the performance metrics evaluated for each model of each dataset.  The `.rds` file of SVM Polynomial kernel is subdivided into models and metrics file as a single was still excedding the size limit. The logic of combining the files and using the results has been implemented in the .R/.qmd file of MODEL EVALUATION section.
