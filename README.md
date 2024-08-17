@@ -232,7 +232,8 @@ Team mapping to standardize team names -
 ```
 # Corrected team name mapping
 team_name_mapping <- list(
-  "Bayern Munich" = c("Bayern Munich", "Bayern München", "FC Bayern München", "FC Bayern Munich", "Bayern"),
+  "Bayern Munich" = c("Bayern Munich", "Bayern München", "FC Bayern München",
+                      "FC Bayern Munich", "Bayern"),
   "Dortmund" = c("Dortmund", "Borussia Dortmund"),
   "RB Leipzig" = c("RB Leipzig", "Leipzig", "RBL"),
   "Leverkusen" = c("Leverkusen", "Bayer 04 Leverkusen", "Bayer"),
@@ -293,7 +294,8 @@ This is a sample list used to standardize team names . The pre - match reposrt i
 ```
 # Function to calculate sentence-level sentiment scores
 calculate_sentence_sentiment <- function(sentences_with_teams) {
-  sentiment_scores <- sentiment_by(sentences_with_teams$sentence, by = list(sentences_with_teams$team)) %>%
+  sentiment_scores <- sentiment_by(sentences_with_teams$sentence,
+                      by = list(sentences_with_teams$team)) %>%
     select(team = "sentences_with_teams$team", ave_sentiment)
   
   return(sentiment_scores)
