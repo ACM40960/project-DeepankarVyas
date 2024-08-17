@@ -238,7 +238,8 @@ team_name_mapping <- list(
   "RB Leipzig" = c("RB Leipzig", "Leipzig", "RBL"),
   "Leverkusen" = c("Leverkusen", "Bayer 04 Leverkusen", "Bayer"),
   "Ein Frankfurt" = c("Ein Frankfurt", "Eintracht Frankfurt", "Frankfurt", "Eintracht"),
-  "Hoffenheim" = c("Hoffenheim", "TSG 1899 Hoffenheim", "TSG Hoffenheim", "1899 Hoffenheim"),
+  "Hoffenheim" = c("Hoffenheim", "TSG 1899 Hoffenheim", "TSG Hoffenheim",
+                  "1899 Hoffenheim"),
   "Wolfsburg" = c("Wolfsburg", "VfL Wolfsburg"),
   "Freiburg" = c("Freiburg", "SC Freiburg", "Sport-Club Freiburg"),
 )
@@ -262,7 +263,8 @@ contains_team_name <- function(sentence, team_names) {
 
 
 # Function to associate sentences with teams
-associate_sentences_with_teams <- function(text, home_team, away_team, expanded_mapping) {
+associate_sentences_with_teams <- function(text, home_team, away_team,
+                                            expanded_mapping) {
   text_lower <- tolower(text)
   home_team <- tolower(home_team)
   away_team <- tolower(away_team)
@@ -278,7 +280,8 @@ associate_sentences_with_teams <- function(text, home_team, away_team, expanded_
     sentence <- sentences[i]
     if (current_team == home_team && contains_team_name(sentence, away_team_names)) {
       current_team <- away_team
-    } else if (current_team == away_team && contains_team_name(sentence, home_team_names)) {
+    } else if (current_team == away_team && contains_team_name(sentence,
+                home_team_names)) {
       current_team <- home_team
     }
     associated_sentences$team[i] <- current_team
