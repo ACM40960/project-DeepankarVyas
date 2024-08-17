@@ -12,7 +12,7 @@ This section gives a detailed explanation of the models trained, the different h
 
 ### Ranked Probability Score (RPS)
 
-The metric used to select the optimal hyperparameter was **Ranked Probability Score (RPS)** . The Ranked Probability Score (RPS) is a measure of how good forecasts are in matching observed outcomes. For RPS :
+The metric used to select the optimal hyperparameter was **Ranked Probability Score (RPS)** [4] . The Ranked Probability Score (RPS) is a measure of how good forecasts are in matching observed outcomes. For RPS :
 
 - RPS = 0 the forecast is wholly accurate;
 - RPS = 1 the forecast is wholly inaccurate.
