@@ -390,7 +390,7 @@ The best model selection, however,  was done based on a huerestic involving **Me
 ```
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
-    <img width="734" alt="Model within Thresholds" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/Models_Thresholds_page-0001.jpg">
+    <img width="500" alt="Model within Thresholds" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/Screenshot%202024-08-17%20at%2012.39.57.png">
    <p style="text-align: center;"><em>Figure 6: Threshold values to determine optimal model selection.</em></p> 
 </div>
 
