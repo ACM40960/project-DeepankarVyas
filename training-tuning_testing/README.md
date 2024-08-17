@@ -8,7 +8,7 @@ This section gives a detailed explanation of the models trained, the different h
 - Random Forest
 - Nueral Networks
 
-5-fold cross validation procedure with 3 repitions were used to tune the hyperparameters of the models. For creating folds, `creatMultiFolds` procedure was used so as to have the same data folds for each model, so as to ensure the difference in predicitive performance was down only due to the predicitive capibilities of the model, and not because of the data being different. `caret` was used to carry out the training and tuning procedure for the first 4 models and `keras`, in conjuction with `tensorflow` was used to train and tune neural networks. 
+5-fold cross validation procedure with 3 repititions were used to tune the hyperparameters of the models. For creating folds, `creatMultiFolds` procedure was used so as to have the same data folds for each model, so as to ensure the difference in predicitive performance was down only due to the predicitive capibilities of the model, and not because of the data being different. `caret` was used to carry out the training and tuning procedure for the first 4 models and `keras`, in conjuction with `tensorflow` was used to train and tune neural networks. 
 
 ### Ranked Probability Score (RPS)
 
