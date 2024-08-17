@@ -102,8 +102,8 @@ The code in both the files is exactly the same, although .R files have been upda
 │   ├── feature-engineering.qmd                # Quarto document for performing feature engineering on datasets.
 │   └── feature-engineering.R                  # R script containing the code for feature engineering processes.
 ├── data-cleanup-nlp/
-│   ├── Dataset_Cleanup_NLP.qmd                # Quarto document detailing data cleaning and Senitment Analysis procedures.
-│   └── Dataset_Cleanup_NLP.R                  # R script for executing data cleaning and Senitment Analysis procedures.
+│   ├── Dataset_Cleanup_NLP.qmd                # Quarto document detailing data cleaning and Sentiment Analysis procedures.
+│   └── Dataset_Cleanup_NLP.R                  # R script for executing data cleaning and Sentiment Analysis procedures.
 ├── eda-splitting/
 │   ├── Data_EDA_Splitting.qmd                 # Quarto document for Exploratory Data Analysis (EDA) and dataset splitting.
 │   ├── Data_EDA_Splitting.R                   # R script for performing EDA and splitting the data into training/testing sets.
