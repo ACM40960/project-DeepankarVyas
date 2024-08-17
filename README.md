@@ -508,3 +508,18 @@ git commit -m "your message"```
 ---
 
 ### References
+
+1. Rahul Baboota and Harleen Kaur. Predictive analysis and modelling football results using machine learning approach for english premier league. International Journal of Forecasting, 35(2):741–755, 2019.
+2. Ryan Beal, Stuart E. Middleton, Timothy J. Norman, and Sarvapali D. Ramchurn. Combining machine learning and human experts to predict match outcomes in football: A baseline model. Proceedings of the AAAI Conference on Artificial Intelligence, 35(17):15447–15451, May 2021
+3. Bing Choi, Lee-Kien Foo, and Sook-Ling Chua. Predicting football match outcomes with machine learning approaches. MENDEL, 29:229–236, 12 2023.
+4. Anthony Constantinou and Norman Fenton. Solving the problem of inadequate scoring rules for assessing probabilistic football forecast models. Journal of Quantitative Analysis in Sports, 8, 01 2012
+5. FIFA Index. FIFA Index, 2024. [Accessed: 2024-06-10]
+6. Football-Data.co.uk. Football-Data.co.uk, 2024. [Accessed: 2024-06-10].
+7. Farzin Owramipur, Parinaz Eskandarian, and Faezeh Mozneb. Football result prediction with bayesian network in spanish league-barcelona team. International Journal of Computer Theory and Engineering, pages 812–815, 01 2013.
+8. WhoScored.com. WhoScored.com, 2024. [Accessed: 2024-06-10]
+9. Erik ˇStrumbelj. On determining probability forecasts from betting odds. International Journal of Forecasting, 30(4):934–943, 2014
+
+
+
+
+
