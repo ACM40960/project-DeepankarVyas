@@ -3,7 +3,7 @@
 A detailed list of the features engineered, along with the equations used , is described here :-
 
 1. **HGKPP , AGKPP** - Home and Away teams' past 5 matches Goals.
-2. **HSTKPP , ASTKPP** - Home and Away teams' past 5 matches Shots on Targets.
+2. **HSTKPP , ASTKPP** - Home and Away teams' past 5 matches Shots on Target.
 3. **HCKPP , ACKPP** - Home and Away teams' past 5 matches Corners.
 
 <p align="center">
