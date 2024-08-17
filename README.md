@@ -381,8 +381,10 @@ The best model selection, however,  was done based on a huerestic involving **Me
 1. Arrange the dataset based on F1 Score of the Draw class of the models.
 2. Decide a range of threshold values
 3. Subtract threshold values from the highest F1_Score_Draw among the models .
-4. Optimal threshold value is the max value which accounts for between 2 to 5 models, , not going below 0.05.
-5. Subtract optimal threshold value from the highest F1_Score_Draw and call it Threshold_F1_Draw.
+4. Optimal threshold value is the max value which accounts for between 2 to 5 models,
+   not going below 0.05.
+5. Subtract optimal threshold value from the highest F1_Score_Draw and call it
+   Threshold_F1_Draw.
 5. Filter the models having F1_Score_Draw > Threshold_F1_Draw.
 6. Rank the filtered datasets based on RPS value.
 ```
