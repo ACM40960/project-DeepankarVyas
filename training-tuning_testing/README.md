@@ -79,7 +79,7 @@ For each model, other metrices such as `Sensitivity`, `Specificity`,`F1 Score`, 
 1. Multinomial Logisitic Regression - Multinomial Logistic Regression is an extension of logistic regression used for modeling outcomes with more than two categories. It models the probability of each category as a function of the independent variables using the softmax function .  There were no parameters to tune as such for logistic regression and since feture selection was already done , with our datasat divided into 4 datasets, it was applied using all the features to predict the match outcome.
 2. SVM with Polynomial Kernel - A Support Vector Machine (SVM) with a polynomial kernel is a type of supervised learning algorithm used for classification and regression tasks. The polynomial kernel transforms the input data into a higher-dimensional space, enabling the SVM to capture more complex patterns that are not linearly separable in the original feature space. The kernel function computes the similarity between data points as a polynomial function of their dot product, allowing the model to account for the non-linear relationship between input and the output.
 
-The hyperparameters tuned for SVM Polynomial Kernel are :- C (Cost - trade-off between maximizing the margin and minimizing classification errors), scale (the influence of a single training example) and degree (the flexibility of the decision boundary). The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below. The optimal hyperparameter is the one with the lowest RPS value
+The hyperparameters tuned for SVM Polynomial Kernel are :- C (Cost - trade-off between maximizing the margin and minimizing classification errors), scale (the influence of a single training example) and degree (the flexibility of the decision boundary). The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below for datasets Class A, Class A NLP, Class B NLP, Class B in clockwise order. The optimal hyperparameter is the one with the lowest RPS value
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="SVM Polynomial" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/SVM_Poly_Heatmap_page-0001%20(1).jpg">
@@ -88,7 +88,7 @@ The hyperparameters tuned for SVM Polynomial Kernel are :- C (Cost - trade-off b
 
 3. SVM with RBF Kernel - The RBF kernel maps input data into a higher-dimensional space, where it can draw non-linear decision boundaries. This kernel function measures the similarity between data points based on their distance, with the kernel value decreasing exponentially as the distance increases and is particularly powerful in capturing the non linear relationship between input and output.
 
-The hyperparameters tuned for SVM RBF Kernel are :- C (Cost - trade-off between maximizing the margin and minimizing classification errors),and sigma (the width of the Gaussian function used in the RBF kernel). The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below. The optimal hyperparameter is the one with the lowest RPS value
+The hyperparameters tuned for SVM RBF Kernel are :- C (Cost - trade-off between maximizing the margin and minimizing classification errors),and sigma (the width of the Gaussian function used in the RBF kernel). The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below for datasets Class A, Class A NLP, Class B NLP, Class B in clockwise order. The optimal hyperparameter is the one with the lowest RPS value
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="SVM RBF" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/SVM_RBF_Heatmap_page-0001%20(1).jpg">
@@ -97,7 +97,7 @@ The hyperparameters tuned for SVM RBF Kernel are :- C (Cost - trade-off between 
 
 4. Random Forest - Random Forest is an ensemble learning method that builds multiple decision trees during training and merges their outputs to improve accuracy and control overfitting. Each tree in the forest is trained on a random subset of the data, with features also randomly selected at each split point, ensuring diversity among the trees. The final prediction is made by taking a majority vote (in classification) from all the individual trees.
 
-The parameters tuned for Random forest are - mtry (number of features used at split) and ntree (number of trees ). Since `caret` does not provide an inbuilt implementation to tune ntree, a custom implementation was used to tune this hyperparameter. The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below. The optimal hyperparameter is the one with the lowest RPS value
+The parameters tuned for Random forest are - mtry (number of features used at split) and ntree (number of trees ). Since `caret` does not provide an inbuilt implementation to tune ntree, a custom implementation was used to tune this hyperparameter. The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below for datasets Class A, Class A NLP, Class B NLP, Class B in clockwise order. The optimal hyperparameter is the one with the lowest RPS value
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="Random Forest" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/RF_Heatmap_page-0001%20(1).jpg">
@@ -106,7 +106,7 @@ The parameters tuned for Random forest are - mtry (number of features used at sp
 
 5. Neural networks - neural networks are the deep learning implementation of Machine Learning. They mimic the neurological functioning of the human brain. The structure of the neural networks used in our model is as follows :-
 
-3 layers with 128, 64 and 32 units respectively. 100 epochs with a batch size of 32 and early stopping criterion. Dropout rate and L2 regularization were also used which were tuned. Learning rate was tuned implicitly using Adam optimizer. The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below. The optimal hyperparameter is the one with the lowest RPS value
+3 layers with 128, 64 and 32 units respectively. 100 epochs with a batch size of 32 and early stopping criterion. Dropout rate and L2 regularization were also used which were tuned. Learning rate was tuned implicitly using Adam optimizer. The heatmap depicting the RPS values at various points of the hyperparameter grid is shown below for datasets Class A, Class A NLP, Class B NLP, Class B in clockwise order. The optimal hyperparameter is the one with the lowest RPS value
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="Random Forest" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/training-tuning_testing/README%20images/NN_Heatmap_page-0001%20(2).jpg">
