@@ -101,6 +101,7 @@ The code in both the files is exactly the same, although .R files have been upda
 ├── feature-engineering/
 │   ├── feature-engineering.qmd                # Quarto document for performing feature engineering on datasets.
 │   └── feature-engineering.R                  # R script containing the code for feature engineering processes.
+│   ├── README.md                              # README file with a detailed description of the section
 ├── data-cleanup-nlp/
 │   ├── Dataset_Cleanup_NLP.qmd                # Quarto document detailing data cleaning and Sentiment Analysis procedures.
 │   └── Dataset_Cleanup_NLP.R                  # R script for executing data cleaning and Sentiment Analysis procedures.
@@ -115,11 +116,11 @@ The code in both the files is exactly the same, although .R files have been upda
 │   ├── class_b_nlp_images/                    # Directory containing visualizations and plots related to Class B_NLP models (contents not shown).
 │   ├── results_class_a_lr.rds                 # Saved results from logistic regression model for Class A.
 │   ├── results_class_a_nlp_lr.rds             # Saved results from logistic regression model for Class A_NLP.
-│   ├── results_class_a_nlp_nn.rds             # Saved results from NLP neural network model for Class A.
+│   ├── results_class_a_nlp_nn.rds             # Saved results from neural network model for Class A_NLP.
 │   ├── results_class_a_nlp_rf.rds             # Saved results from random forest model for Class A_NLP.
 │   ├── results_class_a_nlp_svm_poly_metrics.rds # Performance metrics for SVM (polynomial kernel) model for Class A_NLP.
 │   ├── results_class_a_nlp_svm_poly_model_part1.rds # Part 1 of the saved SVM (polynomial kernel) model for Class A_NLP.
-│   ├── results_class_a_nlp_svm_poly_model_part2.rds # Part 2 of the saved SVM (polynomial kernel) model for Class A_NNLP.
+│   ├── results_class_a_nlp_svm_poly_model_part2.rds # Part 2 of the saved SVM (polynomial kernel) model for Class A_NLP.
 │   ├── results_class_a_nlp_svm_rbf.rds        # Saved results from SVM (RBF kernel) model for Class A_NLP.
 │   ├── results_class_a_nlp.rds                # Combined results for all models and metrics for Class A_NLP.
 │   ├── results_class_a_nn.rds                 # Saved results from neural network model for Class A.
@@ -147,6 +148,7 @@ The code in both the files is exactly the same, although .R files have been upda
 │   ├── results_class_b.rds                    # Combined results for all models for Class B.
 │   ├── Training_Tuning_RPS.qmd                # Quarto document detailing the training and tuning process for models.
 │   └── Training_Tuning_RPS.R                  # R script for executing model training and tuning processes.
+│   ├── README.md                              # README file with a detailed description of the section
 ├── model-selection-evaluation/
 │   ├── eval_images/                           # Directory containing evaluation visualizations and plots (contents not shown).
 │   ├── Model_Selection_Evaluation.qmd         # Quarto document for model selection and evaluation.
@@ -163,6 +165,7 @@ The code in both the files is exactly the same, although .R files have been upda
 │   ├── Master_Dataset_Before_Preprocessing.csv # Raw master dataset before preprocessing.
 │   ├── Master_Dataset_Final.csv               # Final master dataset after preprocessing.
 │   └── Master_Dataset.csv                     # Initial master dataset after feature engineering.
+│   ├── README.md                              # README file with a detailed description of the section
 
 
 ```
@@ -502,7 +505,7 @@ In case of any clarifications or queries, do reach out to the author :-
 [deepankar.vyas@ucdconnect.ie](mailto:deepankar.vyas@ucdconnect.ie)  
 [LinkedIn Profile](https://www.linkedin.com/in/deepankar-vyas-953090161/) 
 
-**DISCLAIMER** :- This project is purely for educational and academic purpose and does not endorse betting or gambling in any form.
+**DISCLAIMER** :- This project is intended purely for educational and academic purpose and does not endorse betting or gambling in any form.
 
 
 
