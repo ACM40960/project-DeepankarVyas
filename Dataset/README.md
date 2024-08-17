@@ -51,7 +51,7 @@ The dataset created after Web Scraping, Feature engineering and Sentiment Analys
 
 ## Master_Dataset_Before_Prepocessing
 
-This is the dataset created after Web Scraping and Feature Engineering . This is mainly used for internal purposes. Since websites could block web scraping anytime, this dataset is used to bypass the web scraping process and jump directly to Feature engineering process. It containns the columns outlined above and some additional column, which won't be used for analysis.
+This is the dataset created after Web Scraping and Feature Engineering . This is mainly used for internal purposes. Since websites could block web scraping anytime, this dataset is used to bypass the web scraping process and jump directly to Feature engineering process. It contains the columns outlined above and some additional columns, which won't be used for analysis.
 
 ## Master_Dataset_Final
 
