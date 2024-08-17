@@ -39,6 +39,8 @@ The objective of this project is to develop a model capable of accurately predic
 
 ### Setting Up
 
+To set up the project in your local machine :- 
+
 1. Clone the repository:
    ```
    git clone https://github.com/ACM40960/project-DeepankarVyas.git   
