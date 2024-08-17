@@ -47,7 +47,7 @@ To set up the project in your local machine :-
    ```
 2. After cloning the repository, it will create a dedicated project folder in your local working directory. Entire code of the project is written in **R** language and contains only **.R/.qmd** files. These files can be easily run in RStudio.
 2. RStudio is an integrated development environment (IDE) for R programming. It provides a user-friendly interface for writing and running R scripts, visualizing data, and generating reports. Rstudio can be installed using this [link](https://posit.co/products/open-source/rstudio/).
-3. Install the required packages :
+3. The project requires the following packages to be installed in your machine. The following piece of code has also been included as the first line in the first .R file. To install the required packages :
    ```
    # Vector of required packages
     packages <- c("knitr","rvest","dplyr","stringr","lubridate","tidyr","furrr",
