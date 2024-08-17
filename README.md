@@ -531,7 +531,6 @@ In case of any clarifications or queries, do reach out to the author :-
 
 **Deepankar Vyas**  
 [deepankar.vyas@ucdconnect.ie](mailto:deepankar.vyas@ucdconnect.ie)  
-[GitHub Profile](https://github.com/DeepankarVyas)  
 [LinkedIn Profile](https://www.linkedin.com/in/deepankar-vyas-953090161/) 
 
 **DISCLAIMER** :- This project is purely for educational and academic purpose and does not endorse betting or gambling in any form.
