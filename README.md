@@ -26,9 +26,9 @@ This projects aims to use Machine Learning models to predict the outcome of Foot
 - [Further Research](#further-research)
 - [Poster](https://github.com/ACM40960/project-DeepankarVyas/blob/main/Final%20Project%20Poster.pdf) <em> <- Click Here </em>
 - [Contributing to the Project](#contributing-to-the-project)
-- [Licenses](#licenses)
+- [License](#license)
 - [References](#references)
-- [Authors](#authors)
+- [Author](#author)
 
 ---
 ### Motivation
@@ -493,20 +493,24 @@ The code for the Model Evaluation, Generalized Predictive Performance and Compar
 
 ### Contributing to the Project
 
-Contributions to the project are welcome!. To contribute to the project :-
+We look forward to and welcome contributions to the project!. To contribute to the project :-
 
 1. Fork the Repository - Fork the repository to your own GitHub account, allowing you to freely make changes without affecting the original project.
 2. Clone the project - Clone the forked project using ```git clone https://github.com/your-username/repository-name.git```
 Replace ```your-username``` with your GitHub username and ```repository-name``` with the name of the repository you forked.
 3. Create a Branch - Create a new branch for your changes ``` git checkout -b feature/your-feature-name```
 4. Make your changes and test them
-5. Commit Your Changes - Commit your changes to your branch with a descriptive commit message ```git add .
-git commit -m "your message"```
-6. Push to GitHub - Push your branch to your forked repository ```git push origin feature/your-feature-name```
-7. Create a Pull Request
+5. Commit Your Changes - Commit your changes to your branch with a descriptive commit message ```git add .```<br>
+   ```git commit -m "your message"```
+7. Push to GitHub - Push your branch to your forked repository ```git push origin feature/your-feature-name```
+8. Create a Pull Request
 
 ---
+### License
 
+This project is licensed under the MIT License. Please have a look at the [LICENSE.md](https://github.com/ACM40960/project-DeepankarVyas/blob/main/LICENSE) for more details.
+
+---
 ### References
 
 1. Rahul Baboota and Harleen Kaur. Predictive analysis and modelling football results using machine learning approach for english premier league. International Journal of Forecasting, 35(2):741–755, 2019.
@@ -519,7 +523,18 @@ git commit -m "your message"```
 8. WhoScored.com. WhoScored.com, 2024. [Accessed: 2024-06-10]
 9. Erik ˇStrumbelj. On determining probability forecasts from betting odds. International Journal of Forecasting, 30(4):934–943, 2014
 
+---
 
+### Author
+
+In case of any clarifications or queries, do reach out to the author :-
+
+**Deepankar Vyas**  
+[deepankar.vyas@ucdconnect.ie](mailto:deepankar.vyas@ucdconnect.ie)  
+[GitHub Profile](https://github.com/DeepankarVyas)  
+[LinkedIn Profile](https://www.linkedin.com/in/deepankar-vyas-953090161/) 
+
+**DISCLAIMER** :- This project is purely for educational and academic purpose and does not endorse betting or gambling in any form.
 
 
 
