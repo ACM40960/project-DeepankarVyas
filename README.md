@@ -194,7 +194,7 @@ Next , Web - Scraping was done to extract pre- match reports from **WhoScored.co
 
 We finally merged the contents together and cam up with $${\color{green}Master \space \color{green}Dataset}$$. Some issues ecountered during this process :-
 - Team names - Custom mapping had to be done to maintain uniformity in teams' naming.
-- Run time - The enire web scraping process took more than $${\color{red}5 \space \color{red}days}$$ to complete on a machine with standard specifications. It is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, datasets have already been created and could be used directly for running the forthcoming sections. The dataset prepared after web scraping , feature engineering ( discussed in length below) and sentiment analysis ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
+- Run time - The enire web scraping process took more than $${\color{red}5]2 \space \color{red}days}$$ to complete on a machine with standard specifications. It is highly recommended to either run the process using parallel computation or run the process on a machine with higher computing power. However, datasets have already been created and could be used directly for running the forthcoming sections. The dataset prepared after web scraping , feature engineering ( discussed in length below) and sentiment analysis ( discussed in length below) is $${\color{green}Master \space \color{green}Dataset}$$, details of which could be found [here](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Dataset).
 
 **UPDATE** :- The websites have blocked web scraping. Therefore, if the user opts to go for the long web-scraping process while running the script, $${\color{green}Master \space \color{green}Dataset \space \color{green}Before \space \color{green}Preprocessing}$$ is used to bypass the Web-Scraping process so that the code doesn't break and user can proceed to the next step - FEATURE ENGINEERING.
 
@@ -522,6 +522,7 @@ This project is licensed under the MIT License. Please have a look at the [LICEN
 7. Farzin Owramipur, Parinaz Eskandarian, and Faezeh Mozneb. Football result prediction with bayesian network in spanish league-barcelona team. International Journal of Computer Theory and Engineering, pages 812–815, 01 2013.
 8. WhoScored.com. WhoScored.com, 2024. [Accessed: 2024-06-10]
 9. Erik ˇStrumbelj. On determining probability forecasts from betting odds. International Journal of Forecasting, 30(4):934–943, 2014
+10. Title Image . URL : [link](https://www.google.com/search?sca_esv=02bca7e091991247&sca_upv=1&rlz=1C5CHFA_enIN1068IN1071&sxsrf=ADLYWIIiSkndWAv1SSsValj5z8AbC4IdIA:1723862375454&q=bundesliga+fantasy&tbm=isch&source=lnms&fbs=AEQNm0Aa4sjWe7Rqy32pFwRj0UkW0hGkZMqx8DI30etERk2J5ensD7-r8eGZ9a38uIDMyUde2U9ERbtBNHgVbph8FdwD6oX3k-8Qfi3P5cZSO7oP9FCM389ySqqOsELvPLMntaWaAX8t0BWrOnISdrBnlw2GHWr3kw&sa=X&ved=2ahUKEwj2h5_k__qHAxVgV0EAHfALDXMQ0pQJegQIFhAB&biw=1710&bih=981&dpr=2#imgrc=JomzvIQtQRlRAM)
 
 ---
 
