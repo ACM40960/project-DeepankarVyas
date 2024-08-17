@@ -371,7 +371,7 @@ Once we have the datatset ready and EDA done, we are ready to train and tune our
 - Random Forest
 - Nueral Networks
 
-Further details about the hyperparameters tuned for each model and the metric used for selecting the optimal hyperparameters can be found here [Model Training and Tuning](https://github.com/ACM40960/project-DeepankarVyas/tree/main/training-tuning_testing)
+Further details about the hyperparameters tuned for each model and the metric used for selecting the optimal hyperparameters can be found here [Model Training and Tuning](https://github.com/ACM40960/project-DeepankarVyas/tree/main/training-tuning_testing) (check out the README file of this section for more details).
 
 ---
 #### Model Evaluation and Generalized Predictive Performance 
