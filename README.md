@@ -23,16 +23,14 @@ This projects aims to use Machine Learning models to predict the outcome of Foot
   - [Model Training and Tuning](#model-training-and-tuning)
   - [Model Evaluation and Generalized Predictive Performance](#model-evaluation-and-generalized-predictive-performance)
   - [Comparison Against Benchmark Setting](#comparison-against-benchmark-setting)
-  - [Forthcoming Research](#forthcoming-research)
+- [Further Research](#further-research)
 - [Poster](https://github.com/ACM40960/project-DeepankarVyas/blob/main/Final%20Project%20Poster.pdf) <em> <- Click Here </em>
 - [Contributing to the Project](#contributing-to-the-project)
 - [Licenses](#licenses)
-- [Data Sources](#data-sources)
 - [References](#references)
 - [Authors](#authors)
 
 ---
-
 ### Motivation
 
 The objective of this project is to develop a model capable of accurately predicting the outcomes of football matches. This model aims to challenge existing betting models by leveraging a unique combination of engineered features, derived from domain-specific knowledge, and sentiment analysis of pre-match reports. By integrating and enhancing previous approaches—some of which focus solely on statistical features while others emphasize text analytics—this project seeks to determine whether a synergistic combination of these methodologies can yield superior predictive results.
@@ -449,3 +447,64 @@ The selected model (Random Forest) was used to predict the unseen data (the test
 ---
 #### Comparison Against Benchmark Setting
 
+We tested the performance of our model against the benchmark setting - **BET365 Odds**. Let's consider the set of odds provided by bookmakers for three possible outcomes of a game: away win, draw, and home win. The implied probabilities for these odds can be calculated by taking the inverse of each odd. However, these implied probabilities usually add up to more than one because bookmakers set odds in a way that favors them, leading to unfair odds. To adjust for this and get more accurate probabilities, we normalize the implied probabilities by dividing each by the sum of all implied probabilities (called the "booksum") [9]. 
+
+<p align="center">
+$\text{Let } \mathbf{O} = \{o_1; o_2; o_3\} \text{ be the bookmakers' odds for away win, draw and home win, respectively.}$<br><br>
+$$\text{Then, the set of implied probabilities } (\pi = \{\pi_1; \pi_2; \pi_3\}) \text{ for the odds are computed by simply taking their inverse:}$$<br><br>
+
+$$
+\pi_i = \frac{1}{o_i} \quad \forall i = 1, 2, 3,
+$$
+
+$$\text{and we compute the normalized probabilities by dividing the inverse odds by the booksum } (\Pi), \text{ such that:}$$<br><br>
+
+$$
+p_i = \frac{o_i}{\Pi},
+$$
+
+$$\text{where}$$
+
+$$
+\Pi = \sum_{i=1}^{3} \pi_i.
+$$
+
+</p>
+
+Even though our model did not beat the benchmark setting, it performed remarkably well and fared slightly better than the model used by the research paper which was used as this project's baseline. Also, the set of features having sentiment scores performed the best, indicating that a better sentiment analysis using LLMs could given even better results.
+
+<div style="background-color: white; display: inline-block; padding: 10px;">
+    <img width="734" alt="RPS Comparison Plot" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/rps_comparison_plot%20(1)_page-0001.jpg">
+   <p style="text-align: center;"><em>Figure 9: RPS Comparison Plot.</em></p> 
+</div>
+
+The code for the Model Evaluation, Generalized Predictive Performance and Comparison Against Benchmark Setting could be found here - [Model Selection and Evaluation](https://github.com/ACM40960/project-DeepankarVyas/tree/main/Model_Selection_Evaluation). This directory contains the .R file, and can be run to generate the desired analysis.
+
+---
+
+### Further Research
+
+- To tune the number of matches to be considered for calculating the engineered features (k), instead of the static value 5.
+- Find a better method to assign the value to the engineered features of the first k matches, instead of removing them
+- Use better techniques for sentiment analysis.
+- Integrating the model with a GUI which will enhance the ease of use.
+
+---
+
+### Contributing to the Project
+
+Contributions to the project are welcome!. To contribute to the project :-
+
+1. Fork the Repository - Fork the repository to your own GitHub account, allowing you to freely make changes without affecting the original project.
+2. Clone the project - Clone the forked project using ```git clone https://github.com/your-username/repository-name.git```
+Replace ```your-username``` with your GitHub username and ```repository-name``` with the name of the repository you forked.
+3. Create a Branch - Create a new branch for your changes ``` git checkout -b feature/your-feature-name```
+4. Make your changes and test them
+5. Commit Your Changes - Commit your changes to your branch with a descriptive commit message ```git add .
+git commit -m "your message"```
+6. Push to GitHub - Push your branch to your forked repository ```git push origin feature/your-feature-name```
+7. Create a Pull Request
+
+---
+
+### References
