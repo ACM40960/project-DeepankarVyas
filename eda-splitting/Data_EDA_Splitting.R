@@ -12,7 +12,7 @@
 ## ------------------------------------------------------------------------------------------------------------------------
 #| label: Libraries
 
-# Load libraries
+# Loading libraries
 library(tidyverse)
 library(wordcloud)
 library(RColorBrewer)
@@ -31,6 +31,7 @@ library(caret)
 library(doParallel)
 library(tidytext)
 library(grid)
+library(rstudioapi)
 
 #' 
 #' Now, we will do a thorough EDA of our dataset, perform feature selection using BORUTA package and finally split it into Class A (Home and Away features) and Class B (Differential features) train and test set after scaling it properly.
@@ -38,9 +39,12 @@ library(grid)
 ## ------------------------------------------------------------------------------------------------------------------------
 #| label: EDA
 
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
 master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
 
-# Step 3: Convert specified character variables to factors
+# Converting specified character variables to factors
 factor_vars <- c('Season', 'FTR', 'Day_of_Week')
 master_dataset[, factor_vars] <- lapply(master_dataset[, factor_vars], as.factor)
 
@@ -123,11 +127,11 @@ summary(master_dataset)
 ## ------------------------------------------------------------------------------------------------------------------------
 #| label: numerical data visualization
 
-# Select numerical columns for testing
+# Selecting numerical columns for testing
 numeric_columns <- master_dataset %>%
   select(where(is.numeric))
 
-# Create the directory if it does not exist
+# Creating the directory if it does not exist
 if (!dir.exists("eda_images")) {
   dir.create("eda_images")
 }
@@ -183,17 +187,17 @@ save_hist_with_normal <- function(data, column) {
   ggsave(file.path("eda_images", paste0("hist_normal_", column, ".pdf")), plot = plot, width = 8, height = 6)
 }
 
-# Create and save Q-Q plots and histograms for all numerical columns
+# Creating and saving Q-Q plots and histograms for all numerical columns
 for (col in names(numeric_columns)) {
   save_qq_plot(numeric_columns, col)
   save_hist_with_normal(numeric_columns, col)
 }
 
-# Perform Shapiro-Wilk test for all numerical columns
+# Performing Shapiro-Wilk test for all numerical columns
 shapiro_results <- numeric_columns %>%
   summarise(across(everything(), ~ shapiro.test(.x)$p.value))
 
-# Perform Anderson-Darling test for all numerical columns
+# Performing Anderson-Darling test for all numerical columns
 ad_results <- numeric_columns %>%
   summarise(across(everything(), ~ ad.test(.x)$p.value))
 
@@ -201,7 +205,7 @@ ad_results <- numeric_columns %>%
 lillie_results <- numeric_columns %>%
   summarise(across(everything(), ~ lillie.test(.x)$p.value))
 
-# Print results
+# Printing results
 print("Shapiro-Wilk Test p-values:")
 print(shapiro_results)
 
@@ -211,7 +215,7 @@ print(ad_results)
 print("Kolmogorov-Smirnov Test p-values:")
 print(lillie_results)
 
-# Save the test results to a CSV file
+# Saving the test results to a CSV file
 test_results <- bind_rows(
   shapiro_results %>% pivot_longer(cols = everything(), names_to = "Test", values_to = "Shapiro_Wilk"),
   ad_results %>% pivot_longer(cols = everything(), names_to = "Test", values_to = "Anderson_Darling"),
@@ -270,13 +274,13 @@ write_csv(test_results, file.path("eda_images", "normality_test_results.csv"))
 #| label: NLP data visualization
 #| warning: false
 
-# Generate a word cloud
+# Generating a word cloud
 wordcloud_data <- master_dataset %>%
   unnest_tokens(word, Preview) %>%
   count(word, sort = TRUE) %>%
   filter(!word %in% stop_words$word) # Remove stop words
 
-# Set up file path and dimensions
+# Setting up file path and dimensions
 output_dir <- "eda_images"
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
@@ -284,23 +288,25 @@ if (!dir.exists(output_dir)) {
 
 png(file.path(output_dir, "Wordcloud.png"), width = 800, height = 600)
 
+# Plotting wordlcoud
 wordcloud(words = wordcloud_data$word, freq = wordcloud_data$n, min.freq = 10,
           max.words = 200, random.order = FALSE, rot.per = 0.35,
           colors = brewer.pal(8, "Dark2"), scale = c(4, 0.5))
 
 dev.off()
 
+# Temporary new output columns with proper labels
 master_dataset <- master_dataset %>%
   mutate(FTR_label = case_when(
     FTR == "H" ~ "Home Win",
     FTR == "A" ~ "Away Win",
     FTR == "D" ~ "Draw",
-    TRUE ~ FTR  # Keep original value if it doesn't match any condition
+    TRUE ~ FTR  # Keeping original value if it doesn't match any condition
   ))
 
 master_dataset$FTR_label <- as.factor(master_dataset$FTR_label)
 
-# Plot using the new column
+# Plotting Sentiment scores by result using the new column
 ggplot(master_dataset, aes(x = factor(FTR_label), y = Home_Score, fill = FTR_label)) +
   geom_boxplot() +
   labs(title = "Home Sentiment Scores by Result", x = "Result", y = "Home Sentiment Score") +
@@ -316,8 +322,9 @@ ggplot(master_dataset, aes(x = factor(FTR_label), y = Away_Score, fill = FTR_lab
   theme_minimal()
 ggsave(file.path("eda_images", paste0("Away_sentiment", ".pdf")))
 
-
+# Comparative analysis of sentiment scores
 png(file.path("eda_images", paste0("Home v Away sentiment", ".png")))
+
 # Interactive scatter plot with Plotly
 plot_ly(master_dataset, x = ~Home_Score, y = ~Away_Score, type = 'scatter', mode = 'markers',
         marker = list(size = 10, color = 'rgba(255, 182, 193, .9)', line = list(color = 'rgba(152, 0, 0, .8)', width = 2))) %>%
@@ -326,7 +333,7 @@ plot_ly(master_dataset, x = ~Home_Score, y = ~Away_Score, type = 'scatter', mode
          yaxis = list(title = 'Away Sentiment Score'))
 dev.off()
 
-# Save the pair plot to a PDF
+#  pair plot 
 pairs(master_dataset %>% select(Home_Score, Away_Score, HGKPP, AGKPP, HCKPP, ACKPP, HSTKPP, ASTKPP),
       main = "Pair Plot of Selected Numeric Variables")
 ggsave(file.path("eda_images", paste0("Pairs", ".pdf")))
@@ -353,21 +360,21 @@ ggsave(file.path("eda_images", paste0("Pairs", ".pdf")))
 ## ------------------------------------------------------------------------------------------------------------------------
 #| label: pair visualization
 
-# Calculate the correlation matrix for all numerical variables
+# Calculating the correlation matrix for all numerical variables
 correlation_matrix <- master_dataset %>%
   select_if(is.numeric) %>%
   cor()
 
-# Find highly correlated variables (|r| > 0.8)
+# Finding highly correlated variables (|r| > 0.8)
 highly_correlated <- findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE, names = TRUE)
 highly_correlated <- c(highly_correlated, "AttDiff", "WeightedStreak", "Home_Midfield",
                        "Away_Attack", "HStWeighted", "AStWeighted")
 highly_correlated_matrix <- correlation_matrix[highly_correlated, highly_correlated]
 
-# Convert correlation matrix to a long format for ggplot
+# Converting correlation matrix to a long format for ggplot
 cor_melt <- melt(highly_correlated_matrix, na.rm = TRUE)
 
-# Set up file path and dimensions
+# Setting up file path and dimensions
 output_dir <- "eda_images"
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
@@ -410,23 +417,25 @@ ggsave(file.path(output_dir, "Highly_Correlated_Variables_Heatmap.pdf"), plot = 
 ## ------------------------------------------------------------------------------------------------------------------------
 #| label: BORUTA feature selection
 
+# Removing unwanted columns
 master_dataset <- master_dataset |> select(-c(6:8,10:12,37:39,44))
 data <- master_dataset |> select(-c(3:5,8))
-# Step 4: Enable parallel computing
-cl <- makeCluster(detectCores() - 2)  # keep 2 cores free
+
+# Enabling parallel computing
+cl <- makeCluster(detectCores() - 2)  # keeping 2 cores free
 registerDoParallel(cl)
 
 set.seed(23200527)
-# Step 5: Set training parameters
+# Setting training parameters
 train_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 5,
                            summaryFunction = multiClassSummary, classProbs = TRUE,
-                           savePredictions = "final")
+                           savePredictions = "final") #10 fold cross validation with 5 repitions
 
-# Step 6: Set grids of hyperparameters
+# Setting grids of hyperparameters
 ntree_set <- c(100, 200, 500, 1000)
 grid <- expand.grid(mtry = 2:(ncol(data)-1))
 
-# Step 7: Run tuning procedure
+# Running tuning procedure
 out <- vector("list", length(ntree_set))
 for (j in 1:length(ntree_set)) {
   set.seed(23200527)
@@ -435,44 +444,44 @@ for (j in 1:length(ntree_set)) {
                     na.action = na.pass)
 }
 
-# Stop the parallel cluster
+# Stopping the parallel cluster
 stopCluster(cl)
 
-# Step 8: Extract optimal hyperparameters
+# Extracting optimal hyperparameters
 best_model_index <- which.max(sapply(out, function(x) max(x$results$AUC)))
 best_model <- out[[best_model_index]]
 best_mtry <- best_model$bestTune$mtry
 best_ntree <- ntree_set[best_model_index]
 
-# Print the optimal hyperparameters
+# Printing the optimal hyperparameters
 print(paste("Optimal mtry: ", best_mtry))
 print(paste("Optimal ntree: ", best_ntree))
 
-# Step 9: Perform Boruta feature selection with optimal hyperparameters
+# Performing Boruta feature selection with optimal hyperparameters
 set.seed(23200527)
 boruta_output <- Boruta(FTR ~ ., data = data, doTrace = 2, 
                         ntree = best_ntree, mtry = best_mtry)
 print(boruta_output)
 
-# Resolve tentative attributes
+# Resolving tentative attributes
 boruta_final <- TentativeRoughFix(boruta_output)
 print(boruta_final)
 
-# Get the selected features
+# Getting the selected features
 selected_features <- getSelectedAttributes(boruta_final, withTentative = FALSE)
 print(selected_features)
 
-# Add custom axis
+# Adding custom axis
 lz <- lapply(1:ncol(boruta_final$ImpHistory), function(i)
   boruta_final$ImpHistory[is.finite(boruta_final$ImpHistory[,i]), i])
 names(lz) <- colnames(boruta_final$ImpHistory)
 Labels <- sort(sapply(lz, median))
 
-# Highlight and draw a box around specific features in the Boruta plot
+# Highlighting boundaries
 highlight_features <- c("shadowMin", "shadowMax")
 highlight_indices <- which(names(Labels) %in% highlight_features)
 
-# Create Boruta plot
+# Creating Boruta plot
 pdf(file.path("eda_images", paste0("Boruta_Importance_Plot_Highlighted.pdf")))
 plot(boruta_final, xlab = "", xaxt = "n")
 
@@ -482,14 +491,14 @@ title("Boruta Importance Plot")
 
 
 
-# Highlight specific features
+# Highlighting specific features
 abline(v = highlight_indices, col = "red", lty = 2)
 
-# Draw a box around the features between shadowMin and shadowMax
+# Drawing a box around the features between shadowMin and shadowMax
 rect(min(highlight_indices) - 0.5, par("usr")[3], 
      max(highlight_indices) + 0.5, par("usr")[4], border = "blue", lwd = 2)
 
-# Add text inside the box
+# Adding text inside the box
 midpoint <- mean(highlight_indices)
 text(midpoint, par("usr")[4] - 2, "UNIMPORTANT ATTRIBUTES", col = "blue", 
      cex = 0.48, font = 2)
@@ -498,7 +507,7 @@ dev.off()
 
 
 
-# Plot selected features
+# Plotting selected features
 selected_data <- data[, c(selected_features, "FTR")]
 importance <- randomForest(FTR ~ ., data = selected_data, 
                            ntree = best_ntree, mtry = best_mtry)$importance
@@ -537,7 +546,7 @@ train_indices <- createDataPartition(master_dataset$FTR, p = 0.8, list = FALSE)
 train_data <- master_dataset[train_indices, ]
 test_data <- master_dataset[-train_indices, ]
 
-# Step 4: Standardizing the numeric columns
+# Standardizing the numeric columns
 numeric_columns <- sapply(train_data, is.numeric)
 
 # Scaling the numeric columns of the training data
@@ -549,13 +558,15 @@ test_data[, numeric_columns] <- scale(test_data[, numeric_columns],
                                       center = attr(x_scale, "scaled:center"), 
                                       scale = attr(x_scale, "scaled:scale"))
 
-# Step 5: Creating Class A and Class B datasets
+# Creating Class A and Class B datasets
 # Creating Class A: Training data with features for both home and away teams
 class_a_train <- train_data %>% select(-c(GD, Streak, WeightedStreak,
                                           Form, STKPP, GKPP, CKPP, B365H, 
                                           B365D, B365A, OverallDiff, 
                                           Preview, Home_Score, Away_Score,
                                           Diff_Score))
+
+# Creating Class A NLP: Training data with features for both home and away teams and respective sentiment scores
 class_a_nlp_train <- train_data %>% select(-c(GD, Streak, WeightedStreak,
                                           Form, STKPP, GKPP, CKPP, B365H, 
                                           B365D, B365A, OverallDiff, 
@@ -567,17 +578,21 @@ class_b_train <- train_data %>% select(c("FTR", "GKPP",
                                          "Streak", "WeightedStreak", "GD",
                                          "OverallDiff"))
 
+# Creating Class B NLP: Training data with differential features of teams and differential sentiment scores
 class_b_nlp_train <- train_data %>% select(c("FTR", "GKPP", 
                                          "CKPP", "STKPP", "Form", 
                                          "Streak", "WeightedStreak", "GD",
                                          "OverallDiff", "Diff_Score"))
 
+# Test data fro the above training data
 # Creating Class A: Test data with features for both home and away teams
 class_a_test <- test_data %>% select(-c(GD, Streak, WeightedStreak,
                                           Form, STKPP, GKPP, CKPP, B365H, 
                                           B365D, B365A, OverallDiff, 
                                           Preview, Home_Score, Away_Score,
                                           Diff_Score))
+
+# Creating Class A NLP: Training data with features for both home and away teams and respective sentiment scores
 class_a_nlp_test <- test_data %>% select(-c(GD, Streak, WeightedStreak,
                                           Form, STKPP, GKPP, CKPP, B365H, 
                                           B365D, B365A, OverallDiff, 
@@ -588,6 +603,8 @@ class_b_test <- test_data %>% select(c("FTR", "GKPP",
                                          "CKPP", "STKPP", "Form", 
                                          "Streak", "WeightedStreak", "GD",
                                          "OverallDiff"))
+
+# Creating Class B NLP: Training data with differential features of teams and differential sentiment scores
 class_b_nlp_test <- test_data %>% select(c("FTR", "GKPP", 
                                          "CKPP", "STKPP", "Form", 
                                          "Streak", "WeightedStreak", "GD",

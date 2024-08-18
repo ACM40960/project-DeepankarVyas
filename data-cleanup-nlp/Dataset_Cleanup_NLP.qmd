@@ -20,13 +20,13 @@ Now, after finally engineering our features and getting dataset ready, we will d
 
 library(tidyverse)
 library(tidytext)
-library(syuzhet)
 library(sentimentr)
 library(lexicon)
 library(textdata)
 library(stringr)
 library(dplyr)
 library(caret)
+library(rstudioapi)
 
 ```
 
@@ -34,10 +34,13 @@ library(caret)
 #| label: dataset_cleanup_preprocessing
 #| warning: false
 
-# Loading the dataset
-master_dataset <- read.csv("../Dataset/Master_Dataset_Before_Preprocessing.csv")
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-# Step 1: Keeping only the specified columns
+# Loading the dataset
+master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
+
+# Keeping only the specified columns
 selected_columns <- c("Season", "FTR", "B365H", "B365D", "B365A", 
                       "Home_Attack", "Home_Midfield", 
                       "Home_Defense", "Home_Overall", "Away_Attack", 
@@ -51,13 +54,12 @@ selected_columns <- c("Season", "FTR", "B365H", "B365D", "B365A",
                       "GD", "AttDiff", "MidDiff", "DefDiff", "OverallDiff")
 master_dataset <- master_dataset %>% select(all_of(selected_columns))
 
-# Step 2: Removing rows with NA values in specified columns
+# Removing rows with NA values in specified columns
 columns_to_check <- c("HGKPP", "AGKPP", "HCKPP", "ACKPP", 
                       "HSTKPP", "ASTKPP", "GKPP", "CKPP", 
                       "STKPP", "HSt", "ASt", "HStWeighted", 
                       "AStWeighted", "Streak", "WeightedStreak")
 master_dataset <- master_dataset %>% filter(across(all_of(columns_to_check), ~ !is.na(.)))
-
 
 ```
 
@@ -67,16 +69,7 @@ Now, we will try to have Home and Away team scores based on Preview Reports by e
 #| label: Step-3
 #| warning: false
 
-# Load necessary libraries
-library(tidyverse)
-library(tidytext)
-library(syuzhet)
-library(sentimentr)
-library(lexicon)
-library(textdata)
-library(stringr)
-
-# Corrected team name mapping
+# Corrected team name mapping with all the possible variations
 team_name_mapping <- list(
   "Bayern Munich" = c("Bayern Munich", "Bayern München", "FC Bayern München", "FC Bayern Munich", "Bayern"),
   "Dortmund" = c("Dortmund", "Borussia Dortmund"),
@@ -127,7 +120,7 @@ team_name_mapping <- list(
 )
 
 # Loading the master dataset
-master_dataset_sentiment_analysis <- read.csv("../Dataset/Master_Dataset_Before_Preprocessing.csv")
+master_dataset_sentiment_analysis <- read.csv("../Dataset/Master_Dataset.csv")
 
 # Removing rows with NA values in any specified columns
 master_dataset_sentiment_analysis <- master_dataset_sentiment_analysis %>% 
@@ -184,7 +177,7 @@ calculate_sentence_sentiment <- function(sentences_with_teams) {
   return(sentiment_scores)
 }
 
-# Iterate over each row of the master dataset and calculate sentiment scores
+# Iterating over each row of the master dataset and calculate sentiment scores
 sentiment_scores_list <- master_dataset_sentiment_analysis %>%
   rowwise() %>%
   mutate(sentences_with_teams = list(

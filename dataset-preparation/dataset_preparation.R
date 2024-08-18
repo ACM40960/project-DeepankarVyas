@@ -144,105 +144,89 @@ data_prep <- function(){
     cat("Proceeding with the long web scraping process...\n")
   
   
-  # Base URL components
-  base_url <- "https://fifaindex.com/teams/fifa24"
-  league_params <- "league=19&league=20&order=desc"
-  max_pages <- 3
-  
-  # Function to scrape data from a given URL
-  scrape_fifa_data <- function(session) {
-    page <- try(scrape(session))
-    
-    if (inherits(page, "try-error") || is.null(page)) {
-      return(data.frame()) # Return empty data frame if error occurs or no content
-    }
-    
-    # Extracting league names
-    leagues <- page %>% html_nodes(".link-league") %>% html_text(trim = TRUE)
-    
-    # Validating league of the first two teams
-    if (length(leagues) < 2 || !all(leagues[1:2] %in% c("Bundesliga", "Germany 1. Bundesliga (1)", "Bundesliga 2", "Germany 2. Bundesliga (2)"))) {
-      return(data.frame()) # Return empty data frame if the first two teams' leagues are not Bundesliga
-    }
-    
-    # Extracting team names
-    teams <- page %>% html_nodes(".link-team") %>% html_text(trim = TRUE)
-    teams <- teams[seq(2, length(teams), 2)] # Skipping the league name links
-    
-    # Extracting ratings
-    att <- page %>% html_nodes("td[data-title='ATT'] span") %>% html_text(trim = TRUE)
-    mid <- page %>% html_nodes("td[data-title='MID'] span") %>% html_text(trim = TRUE)
-    def <- page %>% html_nodes("td[data-title='DEF'] span") %>% html_text(trim = TRUE)
-    ovr <- page %>% html_nodes("td[data-title='OVR'] span") %>% html_text(trim = TRUE)
-    
-    if (length(att) == 0 || length(mid) == 0 || length(def) == 0 || length(ovr) == 0) {
-      return(data.frame()) # Return empty data frame if no ratings found
-    }
-    
-    # Extracting the date
-    date <- page %>% html_nodes("a.dropdown-toggle") %>% html_text(trim = TRUE) %>% .[6]
-    print(date)
-    # Creating the data frame
-    data <- data.frame(
-      Team = teams,
-      Date = date,
-      Attack = as.numeric(att),
-      Midfield = as.numeric(mid),
-      Defense = as.numeric(def),
-      Overall = as.numeric(ovr),
-      stringsAsFactors = FALSE
-    )
-    
-    return(data)
-  }
-  
-  # Initializing an empty data frame to store the results
-  all_fifa_data <- data.frame()
-  
-  # Bow to the base URL to create a polite session
-  session <- bow("https://fifaindex.com")
-  
-  # Looping through all editions and their possible date values
-  for (id in 8:612) {
-    for (page in 1:max_pages) {
-      # Constructing URL
-      print(id)
-      if (page == 1) {
-        url <- paste0(base_url, "_", id, "/?", league_params)
-      } else {
-        url <- paste0(base_url, "_", id, "/?page=", page, "&", league_params)
+    # Base URL components
+    base_url <- "https://fifaindex.com/teams/fifa24"
+    league_params <- "league=19&league=20&order=desc"
+    max_pages <- 3
+    # Function to scrape data from a given URL
+    scrape_fifa_data <- function(url) {
+      page <- try(read_html(url), silent = TRUE)
+      if (inherits(page, "try-error")) {
+        return(data.frame()) # Return empty data frame if error occurs
       }
       
-      # Navigate to the constructed URL using the session
-      session <- nod(session, path = url)
+      # Extract league names
+      leagues <- page %>% html_nodes(".link-league") %>% html_text(trim = TRUE)
       
-      # Scraping data from the URL using the polite session
-      data <- scrape_fifa_data(session)
-      if (nrow(data) == 0) break # If no data, exit the page loop
+      # Validate league of the first two teams
+      if (length(leagues) < 2 || !all(leagues[1:2] %in% c("Bundesliga", "Germany 1. Bundesliga (1)", "Bundesliga 2", "Germany 2. Bundesliga (2)"))) {
+        return(data.frame()) # Return empty data frame if the first two teams' leagues are not Bundesliga
+      }
       
-      # Appending to the master dataset
-      all_fifa_data <- bind_rows(all_fifa_data, data)
+      # Extract team names
+      teams <- page %>% html_nodes(".link-team") %>% html_text(trim = TRUE)
+      teams <- teams[seq(2,length(teams),2)]
+      
+      # Extract ratings
+      att <- page %>% html_nodes("td[data-title='ATT'] span") %>% html_text(trim = TRUE)
+      mid <- page %>% html_nodes("td[data-title='MID'] span") %>% html_text(trim = TRUE)
+      def <- page %>% html_nodes("td[data-title='DEF'] span") %>% html_text(trim = TRUE)
+      ovr <- page %>% html_nodes("td[data-title='OVR'] span") %>% html_text(trim = TRUE)
+      
+      if (length(att) == 0 || length(mid) == 0 || length(def) == 0 || length(ovr) == 0) {
+        return(data.frame()) # Return empty data frame if no ratings found
+      }
+      
+      date <- page %>% html_nodes("a.dropdown-toggle") %>% html_text(trim = TRUE) %>% .[6]
+      
+      data <- data.frame(
+        Team = teams,
+        Date = date,
+        Attack = as.numeric(att),
+        Midfield = as.numeric(mid),
+        Defense = as.numeric(def),
+        Overall = as.numeric(ovr),
+        stringsAsFactors = FALSE
+      )
+      
+      return(data)
     }
-  }
-  
-  # Scraping for June 4, 2024
-  urls <- c(
-    "https://fifaindex.com/teams/?league=19&league=20&order=desc",
-    "https://fifaindex.com/teams/?page=2&league=19&league=20&order=desc"
-  )
-  
-  for (url in urls) {
-    # Navigate to the constructed URL using the session
-    session <- nod(session, path = url)
-    
-    # Scrape the data
-    data <- scrape_fifa_data(session)
-    
-    if (nrow(data) > 0) {
-      all_fifa_data <- bind_rows(all_fifa_data, data)
+    # Initialize an empty data frame to store the results
+    all_fifa_data <- data.frame()
+    # Loop through all editions and their possible date values
+    for (id in 8:612) {
+      for (page in 1:max_pages) {
+        # Construct URL
+        if (page == 1) {
+          url <- paste0(base_url, "_", id, "/?", league_params)
+        } else {
+          url <- paste0(base_url, "_", id, "/?page=", page, "&", league_params)
+        }
+        
+        # Scrape data from the URL
+        data <- scrape_fifa_data(url)
+        if (nrow(data) == 0) break # If no data, exit the page loop
+        
+        # Append to the master dataset
+        all_fifa_data <- bind_rows(all_fifa_data, data)
+      }
     }
-  }
+    #Scraping for June 4, 2024
+    url1 = "https://fifaindex.com/teams/?league=19&league=20&order=desc"
+    url2 = "https://fifaindex.com/teams/?page=2&league=19&league=20&order=desc"
+    for (url in c(url1, url2)){
+      
+      data <- scrape_fifa_data(url)
+      if (nrow(data) == 0) {
+      }# If no data, do nothing
+      
+      else{
+        
+        all_fifa_data <- bind_rows(all_fifa_data, data)
+      }
+    }
   
+  if(!nrow(all_fifa_data)==0){
   # Function to standardize month abbreviations
   standardize_month_abbreviations <- function(date_string) {
     date_string <- str_replace_all(date_string, "Sept\\.", "Sep.")
@@ -416,7 +400,23 @@ data_prep <- function(){
   master_dataset <- master_dataset %>%
     select(-Year, -Month)
   
-  
+  }
+    else{
+      
+      kc <- read.csv("../Dataset/Master_Dataset_Before_Preprocessing.csv")
+      
+      kc$Date <- as.Date(kc$Date, format = "%Y-%m-%d")
+      
+      
+      master_dataset <- master_dataset %>%
+        left_join(kc %>% select(Date, HomeTeam, AwayTeam,
+                                Home_Attack, Home_Midfield, Home_Defense, Home_Overall,
+                                Away_Attack, Away_Midfield, Away_Defense, Away_Overall),
+                  by = c("Date", "HomeTeam", "AwayTeam"))
+      
+      master_dataset <- master_dataset %>%
+        filter(!is.na(Home_Attack))
+    }
   
   #' 
   #' Now, we will web scrap pre match expert reports from `whoscored.com`\[3\]. 
@@ -527,7 +527,7 @@ data_prep <- function(){
   })
   
   
-  
+  if(!nrow(all_match_data)==0){
   
   #' 
   #' Standardizing the team names and merging the resultant dataset with our master dataset.
@@ -591,7 +591,22 @@ data_prep <- function(){
   
   master_dataset <- master_dataset[!is.na(master_dataset$Preview) 
                                    & master_dataset$Preview != "", ]
-  
+  }
+  else{
+    
+    kd <- read.csv("../Dataset/Master_Dataset_Before_Preprocessing.csv")
+    
+    kd$Date <- as.Date(kd$Date, format = "%Y-%m-%d")
+    
+    
+    master_dataset <- master_dataset %>%
+      left_join(kd %>% select(Date, HomeTeam, AwayTeam,
+                              Preview),
+                by = c("Date", "HomeTeam", "AwayTeam"))
+    
+    master_dataset <- master_dataset %>%
+      filter(!is.na(Preview))
+  }
   
   } else {
     # User chose "No"
@@ -610,6 +625,8 @@ data_prep <- function(){
     
     master_dataset <- master_dataset %>%
       filter(!is.na(Home_Attack))
+    master_dataset <- master_dataset %>%
+      filter(!is.na(Preview))
   
   }
   

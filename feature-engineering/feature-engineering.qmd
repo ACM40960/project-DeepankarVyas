@@ -15,7 +15,7 @@ execute:
 
 library(dplyr)
 library(zoo)
-
+library(rstudioapi)
 ```
 
 ## FEATURE ENGINEERING
@@ -43,6 +43,9 @@ $\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$
 #| label: Feature-engineering_Corners_ShotsOnTarget_Goals
 #| warning: false
 
+
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Reading the dataset
 master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
@@ -125,6 +128,7 @@ calculate_kpp <- function(df, k = 5) {
   return(df)
 }
 
+# Calling function to calculate KPP by season
 calculate_kpp_by_season <- function(df, k = 5) {
   df <- df %>%
     mutate(Season = ifelse(month(Date) %in% c("8", "9", "10", "11", "12"), 
@@ -178,16 +182,17 @@ In the event of a draw, the weaker team receives a positive update and the stron
 #| label: Feature-engineering_Form
 #| warning: false
 
-# Ensure the data is sorted by date and convert Date to Date format
+
+# Ensuring the data is sorted by date and convert Date to Date format
 master_dataset <- master_dataset %>%
   arrange(Date)
 
-# Define a function to calculate the form
+# Defining a function to calculate the form
 calculate_form <- function(df, gamma = 0.33) {
-  # Extract unique teams
+  # Extracting unique teams
   teams <- unique(c(df$HomeTeam, df$AwayTeam))
   
-  # Initialize form columns
+  # Initializing form columns
   df <- df %>%
     mutate(
       HForm = NA,
@@ -195,11 +200,11 @@ calculate_form <- function(df, gamma = 0.33) {
       Form = NA
     )
   
-  # Initialize form dictionary
+  # Initializing form dictionary
   form_dict <- setNames(rep(1.0, length(teams)), teams)
   initial_form_set <- setNames(rep(FALSE, length(teams)), teams)
   
-  # Loop through each match to calculate form
+  # Looping through each match to calculate form
   for (i in 1:nrow(df)) {
     home_team <- df$HomeTeam[i]
     away_team <- df$AwayTeam[i]
@@ -230,54 +235,54 @@ calculate_form <- function(df, gamma = 0.33) {
       new_away_form <- away_form - gamma * (away_form - home_form)
     }
     
-    # Update the dataframe with new form values for the current match
+    # Updating the dataframe with new form values for the current match
     df$HForm[i] <- home_form
     df$AForm[i] <- away_form
     
-    # Update the form dictionary with new values
+    # Updating the form dictionary with new values
     form_dict[[home_team]] <- new_home_form
     form_dict[[away_team]] <- new_away_form
   }
   
-  # Calculate the difference in form between home and away teams
+  # Calculating the difference in form between home and away teams
   df <- df %>%
     mutate(Form = HForm - AForm)
   
   return(df)
 }
 
-# Define a function to apply the form calculation by season
+# Defining a function to apply the form calculation by season
 calculate_form_by_season <- function(df, gamma = 0.33) {
-  # Add a Season column
+  # Adding a Season column
   df <- df %>%
     mutate(Season = ifelse(month(Date) %in% c(8, 9, 10, 11, 12), 
                            year(Date), as.numeric(year(Date)) - 1))
   
-  # Extract unique seasons
+  # Extracting unique seasons
   seasons <- unique(df$Season)
   final_df <- data.frame()
   
-  # Loop through each season
+  # Looping through each season
   for (season in seasons) {
-    # Filter matches for the season
+    # Filtering matches for the season
     season_df <- df %>%
       filter(Season == season)
     
-    # Apply form calculation for the season
+    # Applying form calculation for the season
     season_df <- calculate_form(season_df, gamma)
     
-    # Combine results
+    # Combining results
     final_df <- bind_rows(final_df, season_df)
   }
   
-  # Move the Season column to the beginning
+  # Moving the Season column to the beginning
   final_df <- final_df %>%
     select(Season, everything())
   
   return(final_df)
 }
 
-# Apply the form calculation function by season
+# Applying the form calculation function by season
 master_dataset <- calculate_form_by_season(master_dataset)
 
 ```
@@ -427,7 +432,7 @@ where $\text{GS} = \text{Goals Scored}, \text{GC} = \text{Goals Conceded}$ .
 
 ```{r}
 #| label: Feature-engineering_Goal_Difference
-#| warning: false 
+#| warning: false
 
 # Ensuring the data is sorted by date and converting Date to Date format
 master_dataset <- master_dataset %>%

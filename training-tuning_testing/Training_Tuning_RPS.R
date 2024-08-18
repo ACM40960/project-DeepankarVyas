@@ -26,6 +26,7 @@ library(ggplot2)
 library(reshape2)
 library(tensorflow)
 library(caret)
+library(rstudioapi)
 
 #' 
 ## ---------------------------------------------------------------------------------------------------------------
@@ -60,12 +61,17 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # Function to calculate metrics for each class and return them
 calculate_metrics <- function(y_true, y_pred) {
   
+  # Getting unique class levels
   levels <- sort(unique(c(y_true, y_pred)))
+  
+  # Converting true and predicted values to factors
   y_true_factor <- factor(y_true, levels = levels)
   y_pred_factor <- factor(y_pred, levels = levels)
   
+  # Generating the confusion matrix
   confusion_mat <- confusionMatrix(y_pred_factor, y_true_factor)
   
+  # Creating a data frame to store the calculated metrics
   metrics_df <- data.frame(
     Class = rownames(confusion_mat$byClass),
     Sensitivity = confusion_mat$byClass[, "Sensitivity"],
@@ -75,13 +81,14 @@ calculate_metrics <- function(y_true, y_pred) {
     Precision = confusion_mat$byClass[, "Precision"]
   )
   
+  # Calculating AUC for each class
   unique_classes <- sort(unique(y_true))
   
   for (class in unique_classes) {
     y_true_binary <- ifelse(y_true == class, 1, 0)
     y_pred_binary <- ifelse(y_pred == class, 1, 0)
     
-    # Calculate AUC
+    # Calculating AUC
     roc_obj <- roc(y_true_binary, as.numeric(y_pred_binary))
     auc_value <- auc(roc_obj)
     metrics_df$AUC[metrics_df$Class == paste0("Class: ",class)] <- auc_value
@@ -91,11 +98,12 @@ calculate_metrics <- function(y_true, y_pred) {
   return(metrics_df)
 }
 
+# Defining a function to calculate the average metrics across multiple models
 average_metrics <- function(metrics_list) {
-  # Combine the list of data frames into a single data frame
+  # Combining the list of data frames into a single data frame
   combined_df <- bind_rows(metrics_list)
   
-  # Calculate the mean for each class and each metric
+  # Calculating the mean for each class and each metric
   averaged_df <- combined_df %>%
     group_by(Class) %>%
     summarise(
@@ -107,6 +115,7 @@ average_metrics <- function(metrics_list) {
       mean_auc = mean(AUC, na.rm = TRUE)
     )
   
+  # Including RPS calculation if present in the data
   if ("rps" %in% colnames(combined_df)) {
     averaged_df <- averaged_df %>%
       mutate(mean_rps = combined_df %>%
@@ -118,6 +127,7 @@ average_metrics <- function(metrics_list) {
   return(averaged_df)
 }
 
+# Defining a custom summary function for calculating the RPS metric
 customSummary <- function(data, lev = NULL, model = NULL) {
   probs <- as.matrix(data[, lev])
   obs <- as.numeric(data$obs)
@@ -129,12 +139,14 @@ customSummary <- function(data, lev = NULL, model = NULL) {
   return(out)
 }
 
+# Defining a function to calculate the Ranked Probability Score (RPS)
 calculateRPSMetric <- function(predictions, observed) {
   ncat <- ncol(predictions)
   npred <- nrow(predictions)
   
   rps <- numeric(npred)
   
+  # Calculating the RPS for each prediction
   for (rr in 1:npred) {
     obsvec <- rep(0, ncat)
     obsvec[observed[rr]] <- 1
@@ -152,12 +164,14 @@ calculateRPSMetric <- function(predictions, observed) {
 ## ---------------------------------------------------------------------------------------------------------------
 #| label: Training
 
+# Defining the main function to run the training and tuning analysis
 run_analysis <- function(train_file, output_dir) {
-  # Load data
+  
+  # Loading the training data
   train <- read.csv(train_file)
   
   
-  # Create the directory if it does not exist
+  # Creating the directory if it does not exist
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
   }
@@ -168,6 +182,7 @@ run_analysis <- function(train_file, output_dir) {
   # Cross-validation settings
   cv_folds <- createMultiFolds(train$FTR, k = 5, times = 3 )
   
+  # Setting up the training control parameters
   train_ctrl <- trainControl(
     method = "repeatedcv",
     index = cv_folds,
@@ -197,7 +212,7 @@ run_analysis <- function(train_file, output_dir) {
   ntree_set <- c(100, 200, 500, 1000)
   grid_rf <- expand.grid(mtry = 2:7)
   
-  # Multinomial Logistic Regression with stepwise AIC selection
+  # Multinomial Logistic Regression
   set.seed(23200527)
     
   print("Starting Logistic Regression")
@@ -208,13 +223,14 @@ run_analysis <- function(train_file, output_dir) {
                   maximize=FALSE)
   print(fit_lr)
 
-  # Identify the best hyperparameters
+  # Identifying the best hyperparameters
   best_hyperparameters <- fit_lr$bestTune
-  # Filter predictions for the best hyperparameters
+  
+  # Filtering predictions for the best hyperparameters
   optimal_lr_predictions <- fit_lr$pred %>%
     filter(decay == best_hyperparameters$decay)
   
-  # Calculate metrics on the sampled data
+  # Calculating metrics on the sampled data
   lr_metrics <- optimal_lr_predictions %>%
     group_by(Resample) %>%
     summarise(
@@ -222,7 +238,7 @@ run_analysis <- function(train_file, output_dir) {
       length_of_group = n()
   )
   
-  
+  # Storing the results for Logistic Regression
   results_list$lr <<- list(metrics = average_metrics(lr_metrics$metrics), 
                                 model = fit_lr)
   results_list$lr$metrics['rps'] <<- results_list$lr$model$results |>
@@ -243,16 +259,17 @@ run_analysis <- function(train_file, output_dir) {
   )
   print(fit_svm_poly)
   
+  # Saving the plot of SVM polynomial kernel results
   plot(fit_svm_poly)
   ggsave(file.path(output_dir, "SVM_Poly_Plot.pdf"))
   
-  # Heatmap for SVM Polynomial Kernel Hyperparameters
+  # Creating a heatmap for SVM Polynomial Kernel Hyperparameters
   results_svm_poly <- as.data.frame(fit_svm_poly$results)
   results_svm_poly_melt <- melt(results_svm_poly, 
                                 id.vars = c("C", "scale", "degree"),
                                 measure.vars = c("RPS"))
   
-  # Generate heatmap for SVM Polynomial Kernel
+  # Generating heatmap for SVM Polynomial Kernel
   ggplot(results_svm_poly_melt, aes(x = as.factor(C), 
                                     y = as.factor(scale), 
                                     fill = value)) +
@@ -265,16 +282,16 @@ run_analysis <- function(train_file, output_dir) {
   ggsave(file.path(output_dir, "SVM_Poly_Heatmap.pdf"))
   
   
-  # Identify the best hyperparameters
+  # Identifying the best hyperparameters
   best_hyperparameters <- fit_svm_poly$bestTune
   
-  # Filter predictions for the best hyperparameters
+  # Filtering predictions for the best hyperparameters
   optimal_svm_poly_predictions <- fit_svm_poly$pred %>%
     filter(C == best_hyperparameters$C,
            scale == best_hyperparameters$scale,
            degree == best_hyperparameters$degree)
   
-  # Calculate metrics on the sampled data
+  # Calculating metrics on the sampled data
   svm_poly_metrics <- optimal_svm_poly_predictions %>%
     group_by(Resample) %>%
     summarise(
@@ -282,6 +299,7 @@ run_analysis <- function(train_file, output_dir) {
       length_of_group = n()
   )
   
+  # Storing the results for SVM with polynomial kernel
   results_list$svm_poly <<- list(metrics = average_metrics(svm_poly_metrics$metrics), 
                                 model = fit_svm_poly)
   results_list$svm_poly$metrics['rps'] <<- results_list$svm_poly$model$results |>
@@ -290,6 +308,7 @@ run_analysis <- function(train_file, output_dir) {
            degree == best_hyperparameters$degree) |> dplyr::select(RPS)
   
   print("Finished SVM Poly")
+  
   # SVM with radial basis kernel
   set.seed(23200527)
   print("Starting SVM Gaussian")
@@ -303,6 +322,7 @@ run_analysis <- function(train_file, output_dir) {
   )
   print(fit_svm_rbf)
   
+  # Saving the plot of SVM radial basis kernel results
   plot(fit_svm_rbf)
   ggsave(file.path(output_dir, "SVM_RBF_Plot.pdf"))
   
@@ -312,7 +332,7 @@ run_analysis <- function(train_file, output_dir) {
                                id.vars = c("C", "sigma"),
                                measure.vars = c("RPS"))
   
-  # Generate heatmap for SVM Radial Basis Kernel
+  # Generating heatmap for SVM Radial Basis Kernel
   ggplot(results_svm_rbf_melt, aes(x = as.factor(C), 
                                    y = as.factor(sigma), 
                                    fill = value)) +
@@ -327,15 +347,15 @@ run_analysis <- function(train_file, output_dir) {
   ggsave(file.path(output_dir, "SVM_RBF_Heatmap.pdf"))
   
   
-  # Identify the best hyperparameters
+  # Identifying the best hyperparameters
   best_hyperparameters <- fit_svm_rbf$bestTune
   
-  # Filter predictions for the best hyperparameters
+  # Filtering predictions for the best hyperparameters
   optimal_svm_rbf_predictions <- fit_svm_rbf$pred %>%
     filter(C == best_hyperparameters$C,
            sigma == best_hyperparameters$sigma)
   
-  # Calculate metrics on the sampled data
+  # Calculating metrics on the sampled data
   svm_rbf_metrics <- optimal_svm_rbf_predictions %>%
     group_by(Resample) %>%
     summarise(
@@ -343,6 +363,7 @@ run_analysis <- function(train_file, output_dir) {
       length_of_group = n()
   )
   
+  # Storing the results for SVM with radial basis kernel
   results_list$svm_rbf <<- list(metrics = average_metrics(svm_rbf_metrics$metrics), 
                                 model = fit_svm_rbf)
   results_list$svm_rbf$metrics['rps'] <<- results_list$svm_rbf$model$results |>
@@ -351,6 +372,7 @@ run_analysis <- function(train_file, output_dir) {
 
   
   print("Finished SVM Gaussian")
+  
   # Random Forest tuning
   set.seed(23200527)
   print("Starting Random Forest")
@@ -370,7 +392,7 @@ run_analysis <- function(train_file, output_dir) {
     print(paste("Training for tree - ",ntree_set[j]))
   }
   
-  # extracting and tidy up AU-ROC values
+  # extracting and tidying up AU-ROC values
   acc <- sapply(out_rf, "[[", c("results", "RPS"))
   colnames(acc) <- ntree_set
   acc <- cbind(grid_rf, acc)
@@ -405,7 +427,7 @@ run_analysis <- function(train_file, output_dir) {
   results_rf_melt <- melt(results_rf, id.vars = c("mtry", "ntree"), 
                           measure.vars = c("RPS"))
   
-  # Generate heatmap for Random Forest
+  # Generating heatmap for Random Forest
   ggplot(results_rf_melt, aes(x = as.factor(mtry), y = as.factor(ntree), 
                               fill = value)) +
     geom_tile() +
@@ -419,18 +441,18 @@ run_analysis <- function(train_file, output_dir) {
   ggsave(file.path(output_dir, "RF_Heatmap.pdf"))
   
   
-  
+  # Extracting the best model and hyperparameters from Random Forest
   best_model_index <- which.min(sapply(out_rf, 
                                        function(x) min(x$results$RPS)))
   best_model_rf <- out_rf[[best_model_index]]
   best_mtry <- best_model_rf$bestTune$mtry
   best_ntree <- ntree_set[best_model_index]
   
-  # Filter predictions for the best hyperparameters
+  # Filtering predictions for the best hyperparameters
   optimal_rf_predictions <- best_model_rf$pred %>%
     filter(mtry == best_mtry)
   
-  # Calculate metrics on the sampled data
+  # Calculating metrics on the sampled data
   rf_metrics <- optimal_rf_predictions %>%
     group_by(Resample) %>%
     summarise(
@@ -438,6 +460,7 @@ run_analysis <- function(train_file, output_dir) {
       length_of_group = n()
   )
   
+  # Storing the results for Random Forest
   results_list$rf <<- list(metrics = average_metrics(rf_metrics$metrics), 
                                 model = best_model_rf)
   results_list$rf$metrics['rps'] <<- results_list$rf$model$results |>
@@ -446,6 +469,7 @@ run_analysis <- function(train_file, output_dir) {
   print("Finished Random Forest")
   
   print("Starting Neural Networks")
+  
   # Hyperparameter grid for Neural Networks
   nn_grid <- expand.grid(
     dropout = c(0.3, 0.5, 0.7),
@@ -472,7 +496,7 @@ run_analysis <- function(train_file, output_dir) {
       )
   }
 
-  # Loop for cross-validation with replications
+  # Looping for cross-validation with replications
   results_nn <- data.frame()
 
   for (i in 1:nrow(nn_grid)) {
@@ -481,22 +505,28 @@ run_analysis <- function(train_file, output_dir) {
     cv_results <- list()
     
     for (fold in unique(cv_folds)) {
+      # training fold
       train_index <- fold
+      # validation fold
       val_index <- setdiff(1:nrow(train), fold)
       
       train_fold <- train[train_index, ]
       val_fold <- train[val_index, ]
       
       x_train <- as.matrix(train_fold[-1])
+      
+      # one hot encoding of target variable
       y_train <- to_categorical(as.integer(as.factor(train_fold$FTR))-1)
       x_val <- as.matrix(val_fold[-1])
       y_val <- to_categorical(as.integer(as.factor(val_fold$FTR))-1)
       
+      # building nn model
       model <- build_model(
         dropout = nn_grid$dropout[i],
         lambda = nn_grid$lambda[i]
       )
       
+      # fitting nn model
       fit <- model %>% fit(
         x = x_train, y = y_train,
         validation_data = list(x_val, y_val),
@@ -507,17 +537,19 @@ run_analysis <- function(train_file, output_dir) {
         callback_early_stopping(
           monitor = "val_accuracy",
           patience = 20,
-          restore_best_weights = TRUE  # Restore the best weights observed during training
+          restore_best_weights = TRUE  # Restoring the best weights observed during training
         )
         )
       )
       
+      # predicting on validation set
       y_pred <- model %>% predict(x_val)
       
       y_pred_label <- apply(y_pred, 1, which.max)
       
       y_true <- max.col(y_val)
       
+      # calculating metrics
       metrics_df <- calculate_metrics(y_true, y_pred_label)
       data <- data.frame(obs = y_true, y_pred)
       colnames(data)[-1] <- c("A", "D", "H")
@@ -530,6 +562,7 @@ run_analysis <- function(train_file, output_dir) {
       cv_results <- append(cv_results, list(results_df))
     }
     
+    # averaging results for each fold
     avg_results <- average_metrics(cv_results)
     avg_results$dropout <- nn_grid[i,1]
     avg_results$lambda <- nn_grid[i,2]
@@ -538,7 +571,7 @@ run_analysis <- function(train_file, output_dir) {
   
     print(results_nn)
   
-  # Find optimal hyperparameters
+  # Finding optimal hyperparameters
   optimal_nn_params <- results_nn %>%
     group_by(dropout, lambda) %>%
     summarise(mean_rps = mean(mean_rps)) %>%
@@ -551,7 +584,7 @@ run_analysis <- function(train_file, output_dir) {
                           id.vars = c("id", "dropout", "lambda"),
                           measure.vars = c("mean_rps"))
   
-  # Generate heatmap for Neural Network
+  # Generating heatmap for Neural Network
   ggplot(results_nn_melt, aes(x = as.factor(dropout),
                               y = as.factor(lambda), fill = value)) +
     geom_tile() +
@@ -563,7 +596,7 @@ run_analysis <- function(train_file, output_dir) {
     theme_minimal()
   ggsave(file.path(output_dir, "NN_Heatmap.pdf"))
 
-  
+  # Storing the results for Neural Networks
   nn_metrics <- results_nn |>  filter (dropout==optimal_nn_params$dropout[1],
                                        lambda==optimal_nn_params$lambda[1]) 
   
@@ -599,13 +632,13 @@ results_class_a <- results_list
 
 saveRDS(results_class_a, "results_class_a.rds")
 
-# Save each model to a separate .rds file
+# Saving each model to a separate .rds file
 saveRDS(results_class_a$lr, "results_class_a_lr.rds")
 saveRDS(results_class_a$svm_poly$metrics, "results_class_a_svm_poly_metrics.rds")
 
 midpoint <- ceiling(length(results_class_a$svm_poly$model) / 2)
 
-# Split the list into two parts
+# Splitting the list into two parts
 model_part1 <- results_class_a$svm_poly$model[1:midpoint]
 model_part2 <- results_class_a$svm_poly$model[(midpoint + 1):length(results_class_a$svm_poly$model)]
 
@@ -626,13 +659,13 @@ results_class_a_nlp <- results_list
 
 saveRDS(results_class_a_nlp, "results_class_a_nlp.rds")
 
-# Save each model to a separate .rds file
+# Saving each model to a separate .rds file
 saveRDS(results_class_a_nlp$lr, "results_class_a_nlp_lr.rds")
 saveRDS(results_class_a_nlp$svm_poly$metrics, "results_class_a_nlp_svm_poly_metrics.rds")
 
 midpoint <- ceiling(length(results_class_a_nlp$svm_poly$model) / 2)
 
-# Split the list into two parts
+# Splitting the list into two parts
 model_part1 <- results_class_a_nlp$svm_poly$model[1:midpoint]
 model_part2 <- results_class_a_nlp$svm_poly$model[(midpoint + 1):length(results_class_a_nlp$svm_poly$model)]
 
@@ -656,13 +689,13 @@ results_class_b <- results_list
 saveRDS(results_class_b, "results_class_b.rds")
 
 
-# Save each model to a separate .rds file
+# Saving each model to a separate .rds file
 saveRDS(results_class_b$lr, "results_class_b_lr.rds")
 saveRDS(results_class_b$svm_poly$metrics, "results_class_b_svm_poly_metrics.rds")
 
 midpoint <- ceiling(length(results_class_b$svm_poly$model) / 2)
 
-# Split the list into two parts
+# Splitting the list into two parts
 model_part1 <- results_class_b$svm_poly$model[1:midpoint]
 model_part2 <- results_class_b$svm_poly$model[(midpoint + 1):length(results_class_b$svm_poly$model)]
 
@@ -687,13 +720,13 @@ results_class_b_nlp <- results_list
 saveRDS(results_class_b_nlp, "results_class_b_nlp.rds")
 
 
-# Save each model to a separate .rds file
+# Saving each model to a separate .rds file
 saveRDS(results_class_b_nlp$lr, "results_class_b_nlp_lr.rds")
 saveRDS(results_class_b_nlp$svm_poly$metrics, "results_class_b_nlp_svm_poly_metrics.rds")
 
 midpoint <- ceiling(length(results_class_b_nlp$svm_poly$model) / 2)
 
-# Split the list into two parts
+# Splitting the list into two parts
 model_part1 <- results_class_b_nlp$svm_poly$model[1:midpoint]
 model_part2 <- results_class_b_nlp$svm_poly$model[(midpoint + 1):length(results_class_b_nlp$svm_poly$model)]
 

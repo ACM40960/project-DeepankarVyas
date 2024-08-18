@@ -20,13 +20,13 @@
 
 library(tidyverse)
 library(tidytext)
-library(syuzhet)
 library(sentimentr)
 library(lexicon)
 library(textdata)
 library(stringr)
 library(dplyr)
 library(caret)
+library(rstudioapi)
 
 
 #' 
@@ -34,10 +34,13 @@ library(caret)
 #| label: dataset_cleanup_preprocessing
 #| warning: false
 
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
 # Loading the dataset
 master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
 
-# Step 1: Keeping only the specified columns
+# Keeping only the specified columns
 selected_columns <- c("Season", "FTR", "B365H", "B365D", "B365A", 
                       "Home_Attack", "Home_Midfield", 
                       "Home_Defense", "Home_Overall", "Away_Attack", 
@@ -51,7 +54,7 @@ selected_columns <- c("Season", "FTR", "B365H", "B365D", "B365A",
                       "GD", "AttDiff", "MidDiff", "DefDiff", "OverallDiff")
 master_dataset <- master_dataset %>% select(all_of(selected_columns))
 
-# Step 2: Removing rows with NA values in specified columns
+# Removing rows with NA values in specified columns
 columns_to_check <- c("HGKPP", "AGKPP", "HCKPP", "ACKPP", 
                       "HSTKPP", "ASTKPP", "GKPP", "CKPP", 
                       "STKPP", "HSt", "ASt", "HStWeighted", 
@@ -61,22 +64,16 @@ master_dataset <- master_dataset %>% filter(across(all_of(columns_to_check), ~ !
 
 
 #' 
-#' Now, we will try to have Home and Away team scores based on Preview Reports by experts. We will make use of `NLP` and `sentimentr` package of R , to derive the sentiments based on the pre match reports for both the Home and Away teams, which we will further use to determine whether they improve the accuracy of the model while predicting football matches.
+#' Now, we will try to have Home and Away team scores based on Preview Reports by experts. 
+#' We will make use of `NLP` and `sentimentr` package of R , to derive the sentiments based on the pre match reports for 
+#' both the Home and Away teams, which we will further use to determine whether they improve the accuracy of the model 
+#' while predicting football matches.
 #' 
 ## ------------------------------------------------------------------------------------------------------------------------
 #| label: Step-3
 #| warning: false
 
-# Load necessary libraries
-library(tidyverse)
-library(tidytext)
-library(syuzhet)
-library(sentimentr)
-library(lexicon)
-library(textdata)
-library(stringr)
-
-# Corrected team name mapping
+# Corrected team name mapping with all the possible variations
 team_name_mapping <- list(
   "Bayern Munich" = c("Bayern Munich", "Bayern München", "FC Bayern München", "FC Bayern Munich", "Bayern"),
   "Dortmund" = c("Dortmund", "Borussia Dortmund"),
@@ -184,7 +181,7 @@ calculate_sentence_sentiment <- function(sentences_with_teams) {
   return(sentiment_scores)
 }
 
-# Iterate over each row of the master dataset and calculate sentiment scores
+# Iterating over each row of the master dataset and calculate sentiment scores
 sentiment_scores_list <- master_dataset_sentiment_analysis %>%
   rowwise() %>%
   mutate(sentences_with_teams = list(

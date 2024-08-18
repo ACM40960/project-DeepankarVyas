@@ -1,36 +1,36 @@
-#' ---
-#' title: "Model_Selection_Evaluation"
-#' author: Deepankar Vyas, 23200527
-#' format:
-#'   html:
-#'     embed-resources: true
-#'   pdf: default
-#' execute: 
-#'   warning: false
-#' ---
-#' 
-#' ## MODEL SELECTION, GENERALIZED PERFORMANCE EVALUATION AND TESTING AGAINST BENCHMARK SETTING {.smaller}
-#' 
-#' ### Model Selection
-#' 
-#' We trained the following models for CLASS A and CLASS A NLP datasets:
-#' 
-#' 1.  Logistic Regression
-#' 2.  SVM with Polynomial Kernel
-#' 3.  SVM with Gaussian Kernel
-#' 4.  Random Forest
-#' 5.  Neural Networks
-#' 
-#' The following models were trained for CLASS B and CLASS B NLP datasets:
-#' 
-#' 1.  SVM with Polynomial Kernel
-#' 2.  SVM with Gaussian Kernel
-#' 3.  Random Forest
-#' 4.  Neural Networks
-#' 
-#' We now have to find the best-performing model and the dataset which performs the best. We will use usual evaluation metrics to select the best-performing model (Balanced Accuracy, Precision, Recall, F1-Score, AUC-ROC) with a special emphasis on the DRAW class as it is the hardest to predict. The final model will be retrained on the entire training + validation set and then used to predict the test set, to determine its generalized predictive performance. We will also use a specialized performance metric - RANKED PROBABILITY SCORE to determine how our selected model performed against the models employed by the betting companies.
-#' 
-## ---------------------------------------------------------------------------------------------------------------
+---
+title: "Model_Selection_Evaluation"
+author: Deepankar Vyas, 23200527
+format:
+  html:
+    embed-resources: true
+  pdf: default
+execute: 
+ warning: false
+---
+
+## MODEL SELECTION, GENERALIZED PERFORMANCE EVALUATION AND TESTING AGAINST BENCHMARK SETTING {.smaller}
+
+### Model Selection
+
+We trained the following models for CLASS A and CLASS A NLP datasets :-
+
+1.  Logistic Regression
+2.  SVM with Polynomial Kernel
+3.  SVM with Gaussia Kernle
+4.  Random Forest
+5.  Neural Networks
+
+And the following models were trained for CLASS B and CLASS B NLP :-
+
+1.  SVM with Polynomial Kernel
+2.  SVM with Gaussia Kernle
+3.  Random Forest
+4.  Neural Networks
+
+We now have to find the best performing model and the dataset which performs the best. We will use usual evaluation metrics to select the best performing model (Balanced Accuracy, Precision, Recall, F1-Score, AUC-ROC) with a special emphasis on the DRAW class as it is the hardest to predict. The final model will be retrained on the entire training + validation set and then used to predict the test set, to determine its generalized predictive performance. We will also use specialized performance metric - RANKED PROBABILITY SCORE to determine how our selected model performed against the models employed by the betting companies.
+
+```{r}
 #| label: loading models
 
 # Loading necessary libraries
@@ -56,7 +56,13 @@ results_class_a <- list()
 results_class_a_nlp <- list()
 results_class_b <- list()
 results_class_b_nlp <- list()
+```
 
+Loading models
+
+Class A
+
+```{r}
 # Loading models
 
 # Loading models for Class A
@@ -73,7 +79,11 @@ results_class_a$svm_poly$model <- combined_model
 results_class_a$svm_rbf <- readRDS("../training-tuning_testing/results_class_a_svm_rbf.rds")
 results_class_a$rf <- readRDS("../training-tuning_testing/results_class_a_rf.rds")
 results_class_a$nn <- readRDS("../training-tuning_testing/results_class_a_nn.rds")
+```
 
+Class A NLP
+
+```{r}
 # Loading models for Class A NLP
 results_class_a_nlp$lr <- readRDS("../training-tuning_testing/results_class_a_nlp_lr.rds")
 
@@ -89,7 +99,11 @@ results_class_a_nlp$svm_rbf <- readRDS("../training-tuning_testing/results_class
 results_class_a_nlp$rf <- readRDS("../training-tuning_testing/results_class_a_nlp_rf.rds")
 results_class_a_nlp$nn <- readRDS("../training-tuning_testing/results_class_a_nlp_nn.rds")
 
-# Loading models for Class B
+```
+
+Class B
+
+```{r}
 results_class_b$lr <- readRDS("../training-tuning_testing/results_class_b_lr.rds")
 
 # Combining split SVM model parts for Class B
@@ -103,8 +117,11 @@ results_class_b$svm_poly$model <- combined_model
 results_class_b$svm_rbf <- readRDS("../training-tuning_testing/results_class_b_svm_rbf.rds")
 results_class_b$rf <- readRDS("../training-tuning_testing/results_class_b_rf.rds")
 results_class_b$nn <- readRDS("../training-tuning_testing/results_class_b_nn.rds")
+```
 
-# Loading models for Class B NLP
+Class B NLP
+
+```{r}
 results_class_b_nlp$lr <- readRDS("../training-tuning_testing/results_class_b_nlp_lr.rds")
 
 # Combining split SVM model parts for Class B NLP
@@ -118,7 +135,11 @@ results_class_b_nlp$svm_poly$model <- combined_model
 results_class_b_nlp$svm_rbf <- readRDS("../training-tuning_testing/results_class_b_nlp_svm_rbf.rds")
 results_class_b_nlp$rf <- readRDS("../training-tuning_testing/results_class_b_nlp_rf.rds")
 results_class_b_nlp$nn <- readRDS("../training-tuning_testing/results_class_b_nlp_nn.rds")
+```
 
+Create the directory if it does not exist
+
+```{r}
 # Setting up the output directory for saving plots and results
 output_dir <- "eval_images"
 
@@ -126,9 +147,11 @@ output_dir <- "eval_images"
 if (!dir.exists(output_dir)) {
   dir.create(output_dir)
 }
+```
 
-#' 
-## ---------------------------------------------------------------------------------------------------------------
+Model evaluation and testing
+
+```{r}
 #| label: Model Selection
 
 # Defining a function to plot metrics for all classes
@@ -733,10 +756,11 @@ print(best_model_metrics)
 pdf(file = "eval_images/best_model_metrics.pdf", height = nrow(best_model_metrics)/3, width = 11)
 gridExtra::grid.table(best_model_metrics)
 dev.off()
+```
 
-#' 
-## ---------------------------------------------------------------------------------------------------------------
+Comparison against benchmark setting
 
+```{r}
 #| label : benchmark test
 
 # Setting the seed for reproducibility
@@ -834,3 +858,5 @@ ggplot(rps_comparison, aes(x = Model, y = RPS, fill = Model)) +
 
 # Saving the RPS comparison plot to a PDF file
 ggsave(file.path(output_dir, "rps_comparison_plot.pdf"))
+
+```
