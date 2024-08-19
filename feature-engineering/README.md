@@ -16,7 +16,7 @@ $\mu_{j}^{i}$ = $\left( \sum_{p=j-k}^{j-1} \mu_{p}^{i} \right) / k$ , where $\mu
 
 <p align="center">
 $\text{Streak}(\delta_j) = \left( \sum_{p=j-k}^{j-1} \text{resp}_p \right) / 3k$ <br><br>
-$\text{Weighted\_Streak}(\omega_j) = \sum_{p=j-k}^{j-1} \frac{2(p - (j - k - 1) \text{resp}_p)}{3k(k + 1)}$ , where $\text{resp}_p \in \{0, 1, 3\}$
+$\text{Weighted\_Streak}(\omega_j) = \sum_{p=j-k}^{j-1} \frac{2(p - (j - k - 1)) \text{resp}_p}{3k(k + 1)}$ , where $\text{resp}_p \in \{0, 1, 3\}$
 </p>
 
 5. **HForm , AForm** - Home and Away teams' Form. Much like Streak, it is a measure of team's form but it encompasses a team’s performances in individual matches much more intricately. The form values are updated after every match and take into account the quality of the opposition faced, underlining the importance of both time factor and difficulty of the match. Mathematical formulation of Form ensures that a greater coefficient update is provided if a weak team triumphs over a strong team, and vice-versa. In the case of a draw, the Form of a weak team increases while that of a strong team decreases.
