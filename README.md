@@ -443,7 +443,7 @@ $$
 
 </p>
 
-Even though our model did not beat the benchmark setting, it performed remarkably well and fared slightly better than the model used by the research paper which was used as this project's baseline. Also, the set of features having sentiment scores performed the best, indicating that a better sentiment analysis using LLMs could give even better results and a combination of statisticl features and sentiment analysis could enhance the performance of the models in the field of Sports Analytics. This could prove to be a breakthrough this opens up a new field of research altogether.
+Even though our model did not beat the benchmark setting, it performed remarkably well and fared slightly better than the model used by the research paper which was used as this project's baseline. Also, the set of features having sentiment scores performed the best, indicating that a better sentiment analysis using LLMs could give even better results and a combination of statisticl features and sentiment analysis could enhance the performance of the models in the field of Sports Analytics. This could prove to be a breakthrough as this opens up a new field of research altogether.
 
 <div style="background-color: white; display: inline-block; padding: 10px;">
     <img width="734" alt="RPS Comparison Plot" src="https://github.com/ACM40960/project-DeepankarVyas/blob/main/Model_Selection_Evaluation/eval_images/rps_comparison_plot%20(1)_page-0001.jpg">
