@@ -421,31 +421,27 @@ ggsave(file.path(output_dir, "Highly_Correlated_Variables_Heatmap.pdf"), plot = 
 master_dataset <- master_dataset |> select(-c(6:8,10:12,37:39,44))
 data <- master_dataset |> select(-c(3:5,8))
 
-# Enabling parallel computing
-cl <- makeCluster(detectCores() - 2)  # keeping 2 cores free
-registerDoParallel(cl)
-
 set.seed(23200527)
 # Setting training parameters
 train_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 5,
                            summaryFunction = multiClassSummary, classProbs = TRUE,
-                           savePredictions = "final") #10 fold cross validation with 5 repitions
+                           savePredictions = "final", verboseIter = TRUE) #10 fold cross validation with 5 repitions
 
 # Setting grids of hyperparameters
 ntree_set <- c(100, 200, 500, 1000)
-grid <- expand.grid(mtry = 2:(ncol(data)-1))
+grid <- expand.grid(mtry = 2:7)
 
 # Running tuning procedure
 out <- vector("list", length(ntree_set))
 for (j in 1:length(ntree_set)) {
   set.seed(23200527)
+  print(paste("Starting for tree -",ntree_set[j] ))
   out[[j]] <- train(FTR ~ ., data = data, method = "rf", metric = "Accuracy",
                     trControl = train_ctrl, tuneGrid = grid, ntree = ntree_set[j],
                     na.action = na.pass)
+  print(paste("Finished for tree -",ntree_set[j] ))
 }
 
-# Stopping the parallel cluster
-stopCluster(cl)
 
 # Extracting optimal hyperparameters
 best_model_index <- which.max(sapply(out, function(x) max(x$results$AUC)))
@@ -466,6 +462,7 @@ print(boruta_output)
 # Resolving tentative attributes
 boruta_final <- TentativeRoughFix(boruta_output)
 print(boruta_final)
+
 
 # Getting the selected features
 selected_features <- getSelectedAttributes(boruta_final, withTentative = FALSE)
