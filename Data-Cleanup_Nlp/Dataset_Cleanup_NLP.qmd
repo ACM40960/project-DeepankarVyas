@@ -1,0 +1,211 @@
+---
+title: "Dataset_Cleanup_NLP"
+author: Deepankar Vyas, 23200527
+format:
+  html:
+    embed-resources: true
+  pdf: default
+execute: 
+  warning: false
+---
+
+Now, after finally engineering our features and getting dataset ready, we will do the final cleanup and Sentiment Analysis to make our data ready for EDA. We will cover the following steps :-
+
+1.  Remove unwanted columns
+2.  Remove NA values
+3.  Converting preview reports to scores using Sentiment Analysis extraction
+
+```{r}
+#| label: Loading libraries
+
+library(tidyverse)
+library(tidytext)
+library(sentimentr)
+library(lexicon)
+library(textdata)
+library(stringr)
+library(dplyr)
+library(caret)
+library(rstudioapi)
+
+```
+
+```{r}
+#| label: dataset_cleanup_preprocessing
+#| warning: false
+
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Loading the dataset
+master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
+
+# Keeping only the specified columns
+selected_columns <- c("Season", "FTR", "B365H", "B365D", "B365A", 
+                      "Home_Attack", "Home_Midfield", 
+                      "Home_Defense", "Home_Overall", "Away_Attack", 
+                      "Away_Midfield", "Away_Defense", 
+                      "Away_Overall", "Preview", "Day_of_Week", "HGKPP", 
+                      "AGKPP", "HCKPP", "ACKPP", 
+                      "HSTKPP", "ASTKPP", "GKPP", "CKPP", "STKPP", 
+                      "HForm", "AForm", "Form", "HSt", 
+                      "ASt", "HStWeighted", "AStWeighted", "Streak", 
+                      "WeightedStreak", "HTGD", "ATGD", 
+                      "GD", "AttDiff", "MidDiff", "DefDiff", "OverallDiff")
+master_dataset <- master_dataset %>% select(all_of(selected_columns))
+
+# Removing rows with NA values in specified columns
+columns_to_check <- c("HGKPP", "AGKPP", "HCKPP", "ACKPP", 
+                      "HSTKPP", "ASTKPP", "GKPP", "CKPP", 
+                      "STKPP", "HSt", "ASt", "HStWeighted", 
+                      "AStWeighted", "Streak", "WeightedStreak")
+master_dataset <- master_dataset %>% filter(across(all_of(columns_to_check), ~ !is.na(.)))
+
+```
+
+Now, we will try to have Home and Away team scores based on Preview Reports by experts. We will make use of `NLP` and `sentimentr` package of R , to derive the sentiments based on the pre match reports for both the Home and Away teams, which we will further use to determine whether they improve the accuracy of the model while predicting football matches.
+
+```{r}
+#| label: Step-3
+#| warning: false
+
+# Corrected team name mapping with all the possible variations
+team_name_mapping <- list(
+  "Bayern Munich" = c("Bayern Munich", "Bayern München", "FC Bayern München", "FC Bayern Munich", "Bayern"),
+  "Dortmund" = c("Dortmund", "Borussia Dortmund"),
+  "RB Leipzig" = c("RB Leipzig", "Leipzig", "RBL"),
+  "Leverkusen" = c("Leverkusen", "Bayer 04 Leverkusen", "Bayer"),
+  "Ein Frankfurt" = c("Ein Frankfurt", "Eintracht Frankfurt", "Frankfurt", "Eintracht"),
+  "Hoffenheim" = c("Hoffenheim", "TSG 1899 Hoffenheim", "TSG Hoffenheim", "1899 Hoffenheim"),
+  "Wolfsburg" = c("Wolfsburg", "VfL Wolfsburg"),
+  "Freiburg" = c("Freiburg", "SC Freiburg", "Sport-Club Freiburg"),
+  "Union Berlin" = c("1. FC Union Berlin", "Union Berlin", "Union"),
+  "M'gladbach" = c("M'gladbach", "Borussia Mönchengladbach", "Borussia M'gladbach", "Mönchengladbach", "M.Gladbach", "Gladbach"),
+  "Mainz" = c("Mainz", "1. FSV Mainz 05"),
+  "Werder Bremen" = c("Werder Bremen", "SV Werder Bremen", "Werder", "Bremen"),
+  "Augsburg" = c("Augsburg", "FC Augsburg"),
+  "Stuttgart" = c("Stuttgart", "VfB Stuttgart"),
+  "FC Koln" = c("FC Koln", "1. FC Köln", "Koln", "Köln"),
+  "Bochum" = c("Bochum", "VfL Bochum", "VfL Bochum 1848"),
+  "Hertha" = c("Hertha", "Hertha BSC", "Hertha Berlin", "Hertha BSC Berlin"),
+  "Heidenheim" = c("1. FC Heidenheim", "1. FC Heidenheim 1846", "Heidenheim"),
+  "Hamburg" = c("Hamburg", "Hamburger SV"),
+  "Schalke 04" = c("Schalke 04", "FC Schalke 04", "Schalke"),
+  "Darmstadt" = c("Darmstadt", "SV Darmstadt 98"),
+  "Hannover" = c("Hannover", "Hannover 96"),
+  "Fortuna Dusseldorf" = c("Fortuna Dusseldorf", "Fortuna Düsseldorf", "Düsseldorf", "Dusseldorf", "Fortuna"),
+  "1. FC Kaiserslautern" = c("1. FC Kaiserslautern", "Kaiserslautern"),
+  "Paderborn" = c("Paderborn", "SC Paderborn 07"),
+  "Karlsruher SC" = c("Karlsruher SC", "Karlsruher"),
+  "FC St. Pauli" = c("FC St. Pauli", "St. Pauli"),
+  "Nurnberg" = c("Nurnberg", "1. FC Nürnberg", "1. FC Nuremberg", "Nuernberg"),
+  "Hansa Rostock" = c("Hansa Rostock"),
+  "1. FC Magdeburg" = c("1. FC Magdeburg", "Magdeburg"),
+  "Holstein Kiel" = c("Holstein Kiel"),
+  "Greuther Furth" = c("Greuther Furth", "SpVgg Greuther Fürth", "Fürth", "Furth", "Frth", "Greuther Fuerth"),
+  "Braunschweig" = c("Eintracht Braunschweig", "Braunschweig"),
+  "VfL Osnabrück" = c("VfL Osnabrück", "Osnabrück"),
+  "SV Elversberg" = c("SV Elversberg", "Elversberg"),
+  "SV Wehen Wiesbaden" = c("SV Wehen Wiesbaden", "Wehen Wiesbaden"),
+  "Bielefeld" = c("Bielefeld", "Arminia Bielefeld", "DSC Arminia Bielefeld", "Arminia"),
+  "SV Sandhausen" = c("SV Sandhausen", "SV Sandhausen 1916", "Sandhausen"),
+  "Jahn Regensburg" = c("Jahn Regensburg", "SSV Jahn Regensburg", "Regensburg"),
+  "Würzburger Kickers" = c("Würzburger Kickers", "FC Würzburger Kickers"),
+  "Dynamo Dresden" = c("Dynamo Dresden", "SG Dynamo Dresden", "Dresden"),
+  "FSV Frankfurt" = c("FSV Frankfurt", "FSV Frankfurt 1899"),
+  "1860 München" = c("1860 München", "TSV 1860 München", "1860 Munich"),
+  "FC Energie Cottbus" = c("FC Energie Cottbus", "Energie Cottbus", "Cottbus"),
+  "Alemannia Aachen" = c("Alemannia Aachen", "Aachen"),
+  "Ingolstadt" = c("Ingolstadt", "FC Ingolstadt 04")
+)
+
+# Loading the master dataset
+master_dataset_sentiment_analysis <- read.csv("../Dataset/Master_Dataset.csv")
+
+# Removing rows with NA values in any specified columns
+master_dataset_sentiment_analysis <- master_dataset_sentiment_analysis %>% 
+  filter(across(all_of(columns_to_check), ~ !is.na(.)))
+
+# Function to expand team names
+expand_team_names <- function(mapping) {
+  expanded <- tolower(unlist(mapping, use.names = FALSE))
+  team_keys <- tolower(rep(names(mapping), lengths(mapping)))
+  expanded_mapping <- setNames(team_keys, expanded)
+  return(expanded_mapping)
+}
+
+# Expanding the team names from the mapping
+expanded_mapping <- expand_team_names(team_name_mapping)
+
+# Function to check if a sentence contains any team name from the mapping
+contains_team_name <- function(sentence, team_names) {
+  pattern <- paste0("\\b(", paste(unique(unname(team_names)), collapse = "|"), ")\\b")
+  return(grepl(pattern, sentence))
+}
+
+# Function to associate sentences with teams
+associate_sentences_with_teams <- function(text, home_team, away_team, expanded_mapping) {
+  text_lower <- tolower(text)
+  home_team <- tolower(home_team)
+  away_team <- tolower(away_team)
+  sentences <- unlist(strsplit(text_lower, split = "\\."))
+  
+  home_team_names <- names(expanded_mapping[expanded_mapping == home_team])
+  away_team_names <- names(expanded_mapping[expanded_mapping == away_team])
+  
+  associated_sentences <- tibble(sentence = sentences, team = NA_character_)
+  current_team <- home_team
+  
+  for (i in seq_along(sentences)) {
+    sentence <- sentences[i]
+    if (current_team == home_team && contains_team_name(sentence, away_team_names)) {
+      current_team <- away_team
+    } else if (current_team == away_team && contains_team_name(sentence, home_team_names)) {
+      current_team <- home_team
+    }
+    associated_sentences$team[i] <- current_team
+  }
+  
+  return(associated_sentences)
+}
+
+# Function to calculate sentence-level sentiment scores
+calculate_sentence_sentiment <- function(sentences_with_teams) {
+  sentiment_scores <- sentiment_by(sentences_with_teams$sentence, by = list(sentences_with_teams$team)) %>%
+    select(team = "sentences_with_teams$team", ave_sentiment)
+  
+  return(sentiment_scores)
+}
+
+# Iterating over each row of the master dataset and calculate sentiment scores
+sentiment_scores_list <- master_dataset_sentiment_analysis %>%
+  rowwise() %>%
+  mutate(sentences_with_teams = list(
+    associate_sentences_with_teams(Preview, HomeTeam, AwayTeam, expanded_mapping)
+  )) %>%
+  mutate(sentiment_scores = list(
+    calculate_sentence_sentiment(sentences_with_teams)
+  )) %>%
+  unnest(cols = c(sentiment_scores)) %>%
+  pivot_wider(names_from = team, values_from = ave_sentiment, names_prefix = "score_") %>%
+  rowwise() %>%
+  mutate(
+    Home_score = get(paste0("score_", tolower(HomeTeam))),
+    Away_score = get(paste0("score_", tolower(AwayTeam)))
+  ) %>%
+  select(HomeTeam, AwayTeam, Preview, Home_score, Away_score)
+
+# Adding sentiment scores to the master dataset
+master_dataset <- cbind(master_dataset, 
+                        Home_Score = sentiment_scores_list$Home_score, 
+                        Away_Score = sentiment_scores_list$Away_score)
+
+# Calculating the difference in scores between Home and Away teams
+master_dataset <- master_dataset |> mutate(Diff_Score = Home_Score - Away_Score)
+write_csv(master_dataset, "../Dataset/Master_Dataset.csv")
+
+```
+
+
+
+```

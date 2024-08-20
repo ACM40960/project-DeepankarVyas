@@ -1,0 +1,622 @@
+#' ---
+#' title: "Data_EDA_Splitting"
+#' author: Deepankar Vyas, 23200527
+#' format:
+#'   html:
+#'     embed-resources: true
+#'   pdf: default
+#' execute: 
+#'   warning: false
+#' ---
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: Libraries
+
+# Loading libraries
+library(tidyverse)
+library(wordcloud)
+library(RColorBrewer)
+library(ggplot2)
+library(plotly)
+library(GGally)
+library(gridExtra)
+library(nortest)
+library(ggpubr)
+library(reshape2)
+library(car)
+library(dplyr)
+library(Boruta)
+library(randomForest)
+library(caret)
+library(doParallel)
+library(tidytext)
+library(grid)
+library(rstudioapi)
+
+#' 
+#' Now, we will do a thorough EDA of our dataset, perform feature selection using BORUTA package and finally split it into Class A (Home and Away features) and Class B (Differential features) train and test set after scaling it properly.
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: EDA
+
+# Setting working directory to Source File location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+master_dataset <- read.csv("../Dataset/Master_Dataset.csv")
+
+# Converting specified character variables to factors
+factor_vars <- c('Season', 'FTR', 'Day_of_Week')
+master_dataset[, factor_vars] <- lapply(master_dataset[, factor_vars], as.factor)
+
+str(master_dataset)
+# Summary statistics
+summary(master_dataset)
+
+
+
+
+#' 
+#' -   **Season & FTR**:
+#' 
+#'     -   Both are categorical variables with a length of 3124, indicating the number of observations.
+#' 
+#' -   **Team Ratings (Home_Attack, Home_Midfield, Home_Defense, Home_Overall, Away_Attack, Away_Midfield, Away_Defense, Away_Overall)**:
+#' 
+#'     -   **Home and Away Ratings**: Each of these metrics ranges from 66 to the high 80s or low 90s, indicating variations in team strengths across different aspects.
+#' 
+#'     -   The mean values are similar for home and away teams, indicating balanced team ratings on average.
+#' 
+#' -   **Match Statistics (HGKPP, AGKPP, HCKPP, ACKPP, HSTKPP, ASTKPP, GKPP, CKPP, STKPP)**:
+#' 
+#'     -   **HGKPP (Home Goals Scored - past 5 matches)**: Mean of 1.47.
+#' 
+#'     -   **AGKPP (Away Goals Scored - past 5 matches)**: Mean of 1.52.
+#' 
+#'     -   **HCKPP (Home Corner Kicks - past 5 matches)**: Mean of 4.78.
+#' 
+#'     -   **ACKPP (Away Corner Kicks - past 5 matches)**: Mean of 4.90.
+#' 
+#'     -   **HSTKPP (Home Shots on Target - past 5 matches)**: Mean of 4.66.
+#' 
+#'     -   **ASTKPP (Away Shots on Target - past 5 matches)**: Mean of 4.77.
+#' 
+#' -   **Form Metrics (HForm, AForm, Form, HSt, ASt, HStWeighted, AStWeighted, Streak, WeightedStreak)**:
+#' 
+#'     -   **HForm and AForm (Home and Away Form)**: Mean of approximately 0.97 and 1.03, respectively.
+#' 
+#'     -   **Form**: The overall form metric ranges from -7.68 to 7.46, with a mean close to zero, indicating variability in form.
+#' 
+#'     -   **HSt and ASt (Home and Away Streak)**: Mean of approximately 0.45 and 0.47.
+#' 
+#'     -   **HStWeighted and AStWeighted (Home and Away Weighted Streak)**: Mean values of 0.45 and 0.47.
+#' 
+#'     -   **Streak and WeightedStreak**: These metrics range from -1 to 1, indicating variability in team streaks and weighted streaks.
+#' 
+#' -   **Goal Difference Metrics (HTGD, ATGD, GD)**:
+#' 
+#'     -   **HTGD (Home Team Goal Difference)**: Mean of -0.002.
+#' 
+#'     -   **ATGD (Away Team Goal Difference)**: Mean of 0.002.
+#' 
+#'     -   **GD (Goal Difference)**: Mean of -0.0045.
+#' 
+#'     -   These metrics suggest a slight negative goal difference on average, but close to zero.
+#' 
+#' -   **Difference Metrics (AttDiff, MidDiff, DefDiff, OverallDiff)**:
+#' 
+#'     -   **AttDiff (Attack Difference)**: Mean of -0.037.
+#' 
+#'     -   **MidDiff (Midfield Difference)**: Mean of -0.021.
+#' 
+#'     -   **DefDiff (Defense Difference)**: Mean of -0.022.
+#' 
+#'     -   **OverallDiff**: Mean of -0.019.
+#' 
+#'     -   These metrics indicate minimal differences between home and away team attributes on average.
+#' 
+#' -   **Sentiment Scores (Home_Score, Away_Score, Diff_Score)**:
+#' 
+#'     -   **Home_Score**: Ranges from -0.62 to 0.44 with a mean of -0.010.
+#' 
+#'     -   **Away_Score**: Ranges from -0.52 to 0.45 with a mean of -0.0059.
+#' 
+#'     -   **Diff_Score (Home_Score - Away_Score)**: Ranges from -0.67 to 0.71 with a mean of -0.0043.
+#' 
+#'     -   These scores provide insights into the sentiment analysis performed on the match previews, indicating how positive or negative the sentiment was for each team.
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: numerical data visualization
+
+# Selecting numerical columns for testing
+numeric_columns <- master_dataset %>%
+  select(where(is.numeric))
+
+# Creating the directory if it does not exist
+if (!dir.exists("eda_images")) {
+  dir.create("eda_images")
+}
+
+# Function to create and save Q-Q plot
+save_qq_plot <- function(data, column) {
+  plot <- ggplot(data, aes(sample = .data[[column]])) +
+    stat_qq(color = "#1f77b4", size = 1.5) +
+    stat_qq_line(color = "red", size = 1) +
+    ggtitle(paste("Q-Q Plot of", column)) +
+    labs(
+      x = "Theoretical Quantiles",
+      y = "Sample Quantiles"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title.x = element_text(size = 12, face = "bold"),
+      axis.title.y = element_text(size = 12, face = "bold"),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10)
+    )
+  
+  print(plot)
+  ggsave(file.path("eda_images", paste0("qq_plot_", column, ".pdf")), plot = plot, width = 8, height = 6)
+}
+
+# Function to create and save histogram with normal curve
+save_hist_with_normal <- function(data, column) {
+  plot <- ggplot(data, aes(x = .data[[column]])) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "#1f77b4", 
+                   alpha = 0.6, color = "black") +
+    stat_function(fun = dnorm, args = list(mean = mean(data[[column]], 
+                                                       na.rm = TRUE),
+                                           sd = sd(data[[column]], 
+                                                   na.rm = TRUE)), 
+                  col = "#d62728", size = 1.5) +
+    ggtitle(paste("Histogram with Normal Curve of", column)) +
+    labs(
+      x = paste(column, "Values"),
+      y = "Density"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title.x = element_text(size = 12, face = "bold"),
+      axis.title.y = element_text(size = 12, face = "bold"),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10)
+    )
+  
+  print(plot)
+  ggsave(file.path("eda_images", paste0("hist_normal_", column, ".pdf")), plot = plot, width = 8, height = 6)
+}
+
+# Creating and saving Q-Q plots and histograms for all numerical columns
+for (col in names(numeric_columns)) {
+  save_qq_plot(numeric_columns, col)
+  save_hist_with_normal(numeric_columns, col)
+}
+
+# Performing Shapiro-Wilk test for all numerical columns
+shapiro_results <- numeric_columns %>%
+  summarise(across(everything(), ~ shapiro.test(.x)$p.value))
+
+# Performing Anderson-Darling test for all numerical columns
+ad_results <- numeric_columns %>%
+  summarise(across(everything(), ~ ad.test(.x)$p.value))
+
+# Lilliefors (Kolmogorov-Smirnov) test for normality
+lillie_results <- numeric_columns %>%
+  summarise(across(everything(), ~ lillie.test(.x)$p.value))
+
+# Printing results
+print("Shapiro-Wilk Test p-values:")
+print(shapiro_results)
+
+print("Anderson-Darling Test p-values:")
+print(ad_results)
+
+print("Kolmogorov-Smirnov Test p-values:")
+print(lillie_results)
+
+# Saving the test results to a CSV file
+test_results <- bind_rows(
+  shapiro_results %>% pivot_longer(cols = everything(), names_to = "Test", values_to = "Shapiro_Wilk"),
+  ad_results %>% pivot_longer(cols = everything(), names_to = "Test", values_to = "Anderson_Darling"),
+  lillie_results %>% pivot_longer(cols = everything(), names_to = "Test", values_to = "Kolmogorov_Smirnov")
+)
+
+write_csv(test_results, file.path("eda_images", "normality_test_results.csv"))
+
+
+#' 
+#' #### Normal-like Distributions:
+#' 
+#' These histograms closely follow a normal distribution with symmetrical shapes and central peaks, indicating a balanced and symmetrical spread of data around the mean.
+#' 
+#' **Away_Attack, Away_Defense, Away_Overall, Away_Midfield, Home_Attack, Home_Defense, Home_Overall, Home_Midfield, HTGD, STKPP, Streak, WeightedStreak**
+#' 
+#' #### Slight Left-skewed Distributions:
+#' 
+#' These histograms have slight left skewness, indicating more higher values compared to lower ones.
+#' 
+#' **CKPP, Diff_Score, Home_Score, MidDiff, OverallDiff**
+#' 
+#' #### Right-skewed Distributions:
+#' 
+#' These histograms have right skewness, suggesting that lower values are more common.
+#' 
+#' **ACKPP, ASTKPP, AForm, AGKPP, HGKPP, HSTKPP, GKPP**
+#' 
+#' #### Balanced/Uniform Distributions:
+#' 
+#' These histograms have relatively flat distributions with slight peaks, indicating a more even spread of values across the range.
+#' 
+#' **ASt, AStWeighted, HSt, HStWeighted**
+#' 
+#' ### Overall Summary:
+#' 
+#' -   **Normal-like Distributions**: The majority of histograms fall into this category, indicating that many variables have a balanced and symmetrical distribution around the mean.
+#' 
+#' -   **Slight Left-skewed Distributions**: A smaller number of histograms exhibit a slight left skew, suggesting a tendency towards higher values.
+#' 
+#' -   **Right-skewed Distributions**: A notable portion of histograms show right skewness, indicating a prevalence of lower values.
+#' 
+#' -   **Balanced/Uniform Distributions**: A few histograms show a relatively even spread of values across the range, with slight peaks towards the center.
+#' 
+#' These distributions provide insights into the characteristics of the data, with normal-like distributions suggesting balanced datasets, while skewed distributions indicate the presence of asymmetry and potential outliers. The balanced/uniform distributions reflect a more even spread of values, which could imply a more diverse range of data points.
+#' 
+#' We can gather the following from QQ plots :-
+#' 
+#' -   **Approximately Normal Distributions**: The majority of Q-Q plots for variables such as Away_Attack, Away_Defense, ATGD, AttDiff, Away_Midfield, Away_Overall, DefDiff, Form, GD, Home_Attack, Home_Midfield, Home_Defense, Home_Overall, HTGD, MidDiff, OverallDiff, STKPP, Streak, and WeightedStreak exhibit points lying closely along the diagonal line. This suggests that the data for these variables are approximately normally distributed.
+#' 
+#' -   **Deviations from Normality**: A number of Q-Q plots for variables such as ACKPP, AForm, AGKPP, ASt, ASTKPP, AStWeighted, Away_Score, CKPP, Diff_Score, GKPP, HCKPP, HForm, HSTKPP, HGKPP, HSt, HStWeighted, and Home_Score exhibit points deviating from the diagonal line. These deviations, which often manifest as bends or tails deviating from the straight line, suggest non-normality.
+#' 
+#' Based on the histogram diagrams, qq plot diagrams and the Normality test results, none of the variables display normal characteristics. however, variables which are the difference between the home and away feautres of teams are closer to normality than other variables.
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: NLP data visualization
+#| warning: false
+
+# Generating a word cloud
+wordcloud_data <- master_dataset %>%
+  unnest_tokens(word, Preview) %>%
+  count(word, sort = TRUE) %>%
+  filter(!word %in% stop_words$word) # Remove stop words
+
+# Setting up file path and dimensions
+output_dir <- "eda_images"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+png(file.path(output_dir, "Wordcloud.png"), width = 800, height = 600)
+
+# Plotting wordlcoud
+wordcloud(words = wordcloud_data$word, freq = wordcloud_data$n, min.freq = 10,
+          max.words = 200, random.order = FALSE, rot.per = 0.35,
+          colors = brewer.pal(8, "Dark2"), scale = c(4, 0.5))
+
+dev.off()
+
+# Temporary new output columns with proper labels
+master_dataset <- master_dataset %>%
+  mutate(FTR_label = case_when(
+    FTR == "H" ~ "Home Win",
+    FTR == "A" ~ "Away Win",
+    FTR == "D" ~ "Draw",
+    TRUE ~ FTR  # Keeping original value if it doesn't match any condition
+  ))
+
+master_dataset$FTR_label <- as.factor(master_dataset$FTR_label)
+
+# Plotting Sentiment scores by result using the new column
+ggplot(master_dataset, aes(x = factor(FTR_label), y = Home_Score, fill = FTR_label)) +
+  geom_boxplot() +
+  labs(title = "Home Sentiment Scores by Result", x = "Result", y = "Home Sentiment Score") +
+  scale_fill_discrete(name = "Result") +
+  theme_minimal()
+ggsave(file.path("eda_images", paste0("Home_sentiment", ".pdf")))
+
+
+ggplot(master_dataset, aes(x = factor(FTR_label), y = Away_Score, fill = FTR_label)) +
+  geom_boxplot() +
+  labs(title = "Away Sentiment Scores by Result", x = "Result", y = "Away Sentiment Score") +
+  scale_fill_discrete(name = "Result") +
+  theme_minimal()
+ggsave(file.path("eda_images", paste0("Away_sentiment", ".pdf")))
+
+# Comparative analysis of sentiment scores
+png(file.path("eda_images", paste0("Home v Away sentiment", ".png")))
+
+# Interactive scatter plot with Plotly
+plot_ly(master_dataset, x = ~Home_Score, y = ~Away_Score, type = 'scatter', mode = 'markers',
+        marker = list(size = 10, color = 'rgba(255, 182, 193, .9)', line = list(color = 'rgba(152, 0, 0, .8)', width = 2))) %>%
+  layout(title = 'Interactive Scatter Plot of Sentiment Scores',
+         xaxis = list(title = 'Home Sentiment Score'),
+         yaxis = list(title = 'Away Sentiment Score'))
+dev.off()
+
+#  pair plot 
+pairs(master_dataset %>% select(Home_Score, Away_Score, HGKPP, AGKPP, HCKPP, ACKPP, HSTKPP, ASTKPP),
+      main = "Pair Plot of Selected Numeric Variables")
+ggsave(file.path("eda_images", paste0("Pairs", ".pdf")))
+
+
+
+#' 
+#' #### Scatterplot
+#' 
+#' -   **Description**: The scatterplot depicts the relationship between Home Sentiment Scores and Away Sentiment Scores. Each point represents a match, with its coordinates determined by the sentiment scores.
+#' 
+#' -   **Key Insight**: The points are mostly clustered around the center, indicating that both sentiment scores typically hover around zero, with no extreme values dominating.
+#' 
+#' #### Word Cloud
+#' 
+#' -   **Description**: The word cloud visualizes the frequency of words in a text corpus related to sports news. Larger words appear more frequently in the dataset.
+#' 
+#' -   **Key Insight**: Words like "team," "news," "injury," "games," and "return" are prominent, suggesting these are common themes in the sports news corpus.
+#' 
+#' ### **Feature Selection** {.small}
+#' 
+#' We will use Correlation matrix to remove highly correlated variables (\> \|0.8\|) . We will then use BORUTA package for further variable selection. Boruta package is based on Boruta algorithm, which used Random forest as the baseline to determine variables which are deemed important, based on the reduction in impurity.
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: pair visualization
+
+# Calculating the correlation matrix for all numerical variables
+correlation_matrix <- master_dataset %>%
+  select_if(is.numeric) %>%
+  cor()
+
+# Finding highly correlated variables (|r| > 0.8)
+highly_correlated <- findCorrelation(correlation_matrix, cutoff = 0.8, verbose = TRUE, names = TRUE)
+highly_correlated <- c(highly_correlated, "AttDiff", "WeightedStreak", "Home_Midfield",
+                       "Away_Attack", "HStWeighted", "AStWeighted")
+highly_correlated_matrix <- correlation_matrix[highly_correlated, highly_correlated]
+
+# Converting correlation matrix to a long format for ggplot
+cor_melt <- melt(highly_correlated_matrix, na.rm = TRUE)
+
+# Setting up file path and dimensions
+output_dir <- "eda_images"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Heatmap of highly correlated variables (|r| > 0.8)
+heatmap_plot <- ggplot(data = cor_melt, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab", 
+                       name = "Correlation") +
+  theme_minimal() + 
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1, color = "black"),
+    axis.text.y = element_text(size = 12, color = "black"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  ) +
+  coord_fixed() +
+  ggtitle("Heatmap of Highly Correlated Variables (|r| > 0.8)")
+
+print(heatmap_plot)
+ggsave(file.path(output_dir, "Highly_Correlated_Variables_Heatmap.pdf"), plot = heatmap_plot, width = 10, height = 8)
+
+
+#' 
+#' From the Heatmap of Correlation matrix, it is quite clear that the Ratings of Home and Away Team and their differentials, as well as Streak and Weighted Streak of Home and Away Teams and their differentials display a high level of correlation among themselves. Therefore, it was decided to drop the Attack, Defense and Midfield ratings of Home and Away teams and keep only the Overall ratings , and the corresponding differentials. Also, since Home and Away features are highly correlated with their differentials, and since differential features display characteristics which resemble normal behaviour, it was decided to split the dataset into 2 categories of training and test sets :-
+#' 
+#' 1.  Having individual home and away features of the participating teams
+#' 2.  Having only differential features ( difference between the home and away features) of the participating teams.
+#' 
+#' Models will be trained separately on both these datasets and the performance of the best performing model of each dataset will then be compared to decide which dataset is better suited for our purpose.
+#' 
+#' Further variable selection is done using BORUTA.
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: BORUTA feature selection
+
+# Removing unwanted columns
+master_dataset <- master_dataset |> select(-c(6:8,10:12,37:39,44))
+data <- master_dataset |> select(-c(3:5,8))
+
+set.seed(23200527)
+# Setting training parameters
+train_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 5,
+                           summaryFunction = multiClassSummary, classProbs = TRUE,
+                           savePredictions = "final", verboseIter = TRUE) #10 fold cross validation with 5 repitions
+
+# Setting grids of hyperparameters
+ntree_set <- c(100, 200, 500, 1000)
+grid <- expand.grid(mtry = 2:7)
+
+# Running tuning procedure
+out <- vector("list", length(ntree_set))
+for (j in 1:length(ntree_set)) {
+  set.seed(23200527)
+  print(paste("Starting for tree -",ntree_set[j] ))
+  out[[j]] <- train(FTR ~ ., data = data, method = "rf", metric = "Accuracy",
+                    trControl = train_ctrl, tuneGrid = grid, ntree = ntree_set[j],
+                    na.action = na.pass)
+  print(paste("Finished for tree -",ntree_set[j] ))
+}
+
+
+# Extracting optimal hyperparameters
+best_model_index <- which.max(sapply(out, function(x) max(x$results$AUC)))
+best_model <- out[[best_model_index]]
+best_mtry <- best_model$bestTune$mtry
+best_ntree <- ntree_set[best_model_index]
+
+# Printing the optimal hyperparameters
+print(paste("Optimal mtry: ", best_mtry))
+print(paste("Optimal ntree: ", best_ntree))
+
+# Performing Boruta feature selection with optimal hyperparameters
+set.seed(23200527)
+boruta_output <- Boruta(FTR ~ ., data = data, doTrace = 2, 
+                        ntree = best_ntree, mtry = best_mtry)
+print(boruta_output)
+
+# Resolving tentative attributes
+boruta_final <- TentativeRoughFix(boruta_output)
+print(boruta_final)
+
+
+# Getting the selected features
+selected_features <- getSelectedAttributes(boruta_final, withTentative = FALSE)
+print(selected_features)
+
+# Adding custom axis
+lz <- lapply(1:ncol(boruta_final$ImpHistory), function(i)
+  boruta_final$ImpHistory[is.finite(boruta_final$ImpHistory[,i]), i])
+names(lz) <- colnames(boruta_final$ImpHistory)
+Labels <- sort(sapply(lz, median))
+
+# Highlighting boundaries
+highlight_features <- c("shadowMin", "shadowMax")
+highlight_indices <- which(names(Labels) %in% highlight_features)
+
+# Creating Boruta plot
+pdf(file.path("eda_images", paste0("Boruta_Importance_Plot_Highlighted.pdf")))
+plot(boruta_final, xlab = "", xaxt = "n")
+
+axis(side = 1, las = 2, labels = names(Labels), 
+     at = 1:ncol(boruta_final$ImpHistory), cex.axis = 0.7)
+title("Boruta Importance Plot")
+
+
+
+# Highlighting specific features
+abline(v = highlight_indices, col = "red", lty = 2)
+
+# Drawing a box around the features between shadowMin and shadowMax
+rect(min(highlight_indices) - 0.5, par("usr")[3], 
+     max(highlight_indices) + 0.5, par("usr")[4], border = "blue", lwd = 2)
+
+# Adding text inside the box
+midpoint <- mean(highlight_indices)
+text(midpoint, par("usr")[4] - 2, "UNIMPORTANT ATTRIBUTES", col = "blue", 
+     cex = 0.48, font = 2)
+
+dev.off()
+
+
+
+# Plotting selected features
+selected_data <- data[, c(selected_features, "FTR")]
+importance <- randomForest(FTR ~ ., data = selected_data, 
+                           ntree = best_ntree, mtry = best_mtry)$importance
+importance_df <- data.frame(Feature = rownames(importance), 
+                            Importance = importance[,1])
+importance_plot <- ggplot(importance_df, aes(x = reorder(Feature, Importance),
+                                             y = Importance)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("Features") +
+  ylab("Importance") +
+  ggtitle("Feature Importance")
+importance_plot
+ggsave(file.path("eda_images", "Importance_Plot.pdf"))
+
+#' 
+#' From BORUTA's output, it became clear that the following 5 features are unimportant:-
+#' 
+#' Away_Score, Day_of_Week, Diff_Score, Home_Score, Season;
+#' 
+#' We will remove Day_of_Week and Season from our dataset, and will create separate datasets for both class A and B with Home_Score and Away_Score. This will help us quantify whether the inclusion of Sentiment Analysis improves the performance of our model or not. Finally, this leaves us with 4 different datasets :-
+#' 
+#' 1.  **CLASS A (Class_A) :-** Having individual home and away features of the participating teams
+#' 2.  **CLASS A WITH SENTIMENT SCORES (Class_A_NLP) :-** Having individual home and away features of the participating teams along with sentiment analysis of both the teams
+#' 3.  **CLASS B (Class_B) :-** Having only differential features ( difference between the home and away features) of the participating teams.
+#' 4.  **CLASS B WITH SENTIMENT SCORES (Class_B_NLP) :-** Having only differential features ( difference between the home and away features) of the participating teams with differential sentiment scores.
+#' 
+## ------------------------------------------------------------------------------------------------------------------------
+#| label: Train-Test splitting
+
+master_dataset <- master_dataset |> select(-c(Season,Day_of_Week))
+
+#Splitting data into training and test sets
+set.seed(23200527)
+train_indices <- createDataPartition(master_dataset$FTR, p = 0.8, list = FALSE)
+train_data <- master_dataset[train_indices, ]
+test_data <- master_dataset[-train_indices, ]
+
+# Standardizing the numeric columns
+numeric_columns <- sapply(train_data, is.numeric)
+
+# Scaling the numeric columns of the training data
+x_scale <- scale(train_data[, numeric_columns])
+train_data[, numeric_columns] <- x_scale
+
+# Scaling the numeric columns of the test data on the same scale
+test_data[, numeric_columns] <- scale(test_data[, numeric_columns], 
+                                      center = attr(x_scale, "scaled:center"), 
+                                      scale = attr(x_scale, "scaled:scale"))
+
+# Creating Class A and Class B datasets
+# Creating Class A: Training data with features for both home and away teams
+class_a_train <- train_data %>% select(-c(GD, Streak, WeightedStreak,
+                                          Form, STKPP, GKPP, CKPP, B365H, 
+                                          B365D, B365A, OverallDiff, 
+                                          Preview, Home_Score, Away_Score,
+                                          Diff_Score))
+
+# Creating Class A NLP: Training data with features for both home and away teams and respective sentiment scores
+class_a_nlp_train <- train_data %>% select(-c(GD, Streak, WeightedStreak,
+                                          Form, STKPP, GKPP, CKPP, B365H, 
+                                          B365D, B365A, OverallDiff, 
+                                          Preview, Diff_Score))
+
+# Creating Class B: Training data with differential features only
+class_b_train <- train_data %>% select(c("FTR", "GKPP", 
+                                         "CKPP", "STKPP", "Form", 
+                                         "Streak", "WeightedStreak", "GD",
+                                         "OverallDiff"))
+
+# Creating Class B NLP: Training data with differential features of teams and differential sentiment scores
+class_b_nlp_train <- train_data %>% select(c("FTR", "GKPP", 
+                                         "CKPP", "STKPP", "Form", 
+                                         "Streak", "WeightedStreak", "GD",
+                                         "OverallDiff", "Diff_Score"))
+
+# Test data fro the above training data
+# Creating Class A: Test data with features for both home and away teams
+class_a_test <- test_data %>% select(-c(GD, Streak, WeightedStreak,
+                                          Form, STKPP, GKPP, CKPP, B365H, 
+                                          B365D, B365A, OverallDiff, 
+                                          Preview, Home_Score, Away_Score,
+                                          Diff_Score))
+
+# Creating Class A NLP: Training data with features for both home and away teams and respective sentiment scores
+class_a_nlp_test <- test_data %>% select(-c(GD, Streak, WeightedStreak,
+                                          Form, STKPP, GKPP, CKPP, B365H, 
+                                          B365D, B365A, OverallDiff, 
+                                          Preview, Diff_Score))
+
+# Creating Class B: Test data with differential features only
+class_b_test <- test_data %>% select(c("FTR", "GKPP", 
+                                         "CKPP", "STKPP", "Form", 
+                                         "Streak", "WeightedStreak", "GD",
+                                         "OverallDiff"))
+
+# Creating Class B NLP: Training data with differential features of teams and differential sentiment scores
+class_b_nlp_test <- test_data %>% select(c("FTR", "GKPP", 
+                                         "CKPP", "STKPP", "Form", 
+                                         "Streak", "WeightedStreak", "GD",
+                                         "OverallDiff", "Diff_Score"))
+
+# Saving the cleaned and scaled datasets
+write.csv(class_a_train, "../Dataset/class_a_train.csv", row.names = FALSE)
+write.csv(class_a_test, "../Dataset/class_a_test.csv", row.names = FALSE)
+write.csv(class_b_train, "../Dataset/class_b_train.csv", row.names = FALSE)
+write.csv(class_b_test, "../Dataset/class_b_test.csv", row.names = FALSE)
+write.csv(class_a_nlp_train, "../Dataset/class_a_nlp_train.csv", row.names = FALSE)
+write.csv(class_a_nlp_test, "../Dataset/class_a_nlp_test.csv", row.names = FALSE)
+write.csv(class_b_nlp_train, "../Dataset/class_b_nlp_train.csv", row.names = FALSE)
+write.csv(class_b_nlp_test, "../Dataset/class_b_nlp_test.csv", row.names = FALSE)
+
+write.csv(master_dataset, "../Dataset/Master_Dataset_Final.csv", row.names = FALSE)
+
+
