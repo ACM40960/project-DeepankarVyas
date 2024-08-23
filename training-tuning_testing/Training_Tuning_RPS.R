@@ -43,9 +43,11 @@ library(rstudioapi)
 
 ######################################################################################################
 
-## ATTENTION :- The model training process will take 192+ hours to complete. If No is selected, 
-# user can directly proceed to the next .R file - 'Model_Selection_Evaluation.R', which
+## ATTENTION :- The model training process will take 192+ hours to complete. However, 
+# user can directly proceed to the next .R file - 'Model_Selection_Evaluation.R' and skip the entire 
+# model training process, if desired so. The file 'Model_Selection_Evaluation.R'
 # uses the pre-stored training results, stored at the time of model development and training.
+# If user wishes to train the entire model, the stored results will be overwritten with the new results.
 
 ######################################################################################################
 
